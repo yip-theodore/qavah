@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from "react-router-dom"
+import React from 'react'
+import { Link } from "react-router-dom"
 import { ethers } from 'ethers'
 import { Contract } from '../contracts/contract-address.json'
 import { abi } from '../contracts/Contract.json'
@@ -8,7 +8,6 @@ var Huffman;Huffman={treeFromText:function(b){var a;a=new Huffman.TreeBuilder(b)
 export const encode = (text) => text.replace(/([ \w])\1+/g, (group, chr) => group.length + chr );
 
 function NewProject () {
-  const navigate = useNavigate()
   return (
     <form className='NewProject' onSubmit={async e => {
       e.preventDefault()

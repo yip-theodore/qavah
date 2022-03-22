@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import React, { useRef } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { ethers } from 'ethers'
 import { Contract } from '../contracts/contract-address.json'
 import { abi } from '../contracts/Contract.json'
@@ -8,14 +8,14 @@ export const decode = (text) => text.replace(/(\d+)([ \w])/g, (_, count, chr) =>
 
 function ProjectInfo () {
   const { projectId } = useParams()
-  const navigate = useNavigate()
   const input = useRef()
 
   const p = window.projects?.find(p => p.id === projectId)
 
   const symbol = {
     1337: 'CELO',
-  }[window.ethereum.networkVersion]
+    44787: 'CELO',
+  }[window.ethereum?.networkVersion]
 
   if (!p) return null
 

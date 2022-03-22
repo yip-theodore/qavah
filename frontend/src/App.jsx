@@ -15,7 +15,8 @@ function App () {
 
   const symbol = {
     1337: 'CELO',
-  }[window.ethereum.networkVersion]
+    44787: 'CELO',
+  }[window.ethereum?.networkVersion]
 
   const getProjects = async () => {
     try {
@@ -78,7 +79,6 @@ function App () {
           window.huffman2 = Huffman.Tree.decodeTree(JSON.parse(p.imageMeta).tree)
           const decodedOnce = window.huffman2.decode(p.encodedImage)
           const percentage = p.fundedAmount.mul(10*10).div(p.requestedAmount).toNumber()
-          const toClaim = ethers.utils.formatEther(p.fundedAmount.sub(p.claimedAmount))
           return (
             <Link to={'/' + p.id} className='Project' key={i}>
               <pre className='image'>{decode(decodedOnce).replaceAll('W', ' ').replaceAll('B', '•').match(/.{1,80}/g).join('\n')}</pre>
