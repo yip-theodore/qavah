@@ -6,10 +6,21 @@ import { Context, getContract, getAbi, getSymbol, Huffman, decode } from '../uti
 function ProjectInfo () {
   const { chainId, projectId } = useParams()
   const navigate = useNavigate()
-  const { updateStore } = useContext(Context)
+  const { store, updateStore } = useContext(Context)
   
   const [ project, setProject ] = useState(null)
+  const [ balance, setBalance ] = useState('')
   const input = useRef()
+
+  const getBalance = async force => {
+    if (force) {
+      await window.ethereum.request({ method: "eth_requestAccounts" })
+    }
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    const [ account ] = await window.ethereum.request({ method: "eth_accounts" })
+    const balance = await provider.getBalance(account)
+    setBalance(ethers.utils.formatEther(balance))
+  }
 
   useEffect(() => {
     if (window.ethereum === undefined) {
@@ -17,15 +28,24 @@ function ProjectInfo () {
     }
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     const contract = new ethers.Contract(getContract(chainId), getAbi(), provider)
-    contract.getProject(projectId)
-      .then(project => {
+    const getProject = async () => {
+      try {
+        const project = await contract.getProject(projectId)
         if (!project.title) return
         setProject(project)
-      })
-      .catch(error => {
+      } catch (error) {
         console.error(error)
         updateStore({ message: error.message, disabled: true })
-      })
+      }
+    }
+    getProject()
+    contract.on(contract.filters.FundsDonated(projectId), getProject)
+    contract.on(contract.filters.FundsClaimed(projectId), getProject)
+    getBalance()
+    return () => {
+      contract.off(contract.filters.FundsDonated(projectId), getProject)
+      contract.off(contract.filters.FundsClaimed(projectId), getProject)
+    }
   }, [])
 
   if (!project) return null
@@ -37,9 +57,9 @@ function ProjectInfo () {
   
   return (
     <div className='ProjectInfo'>
-      <div>
+      <div className='bar'>
         <div className="top">
-          <Link to={-1}>Back</Link>
+          <Link to={`/${chainId}`}>Back</Link>
           <span className='amounts'>{percentage}% funded of <b>{ethers.utils.formatEther(project.requestedAmount)} {getSymbol(chainId)}</b></span>
         </div>
         <div className='progress'><div style={{ width: percentage + '%' }} /></div>
@@ -52,13 +72,24 @@ function ProjectInfo () {
         <p className='description'>{project.description}</p>
         <ul>
           {project.donators.map((d, i) =>
-            <li key={'li' + i}>{d} donated {ethers.utils.formatEther(project.donatedAmounts[i])} {getSymbol(chainId)}</li>
+            <li key={'li' + i}>
+              {+window.ethereum.selectedAddress === +d ? (
+                <b>You</b>
+              ) : (
+                <span>{d}</span>
+              )} donated {ethers.utils.formatEther(project.donatedAmounts[i])} {getSymbol(chainId)}
+            </li>
           )}
         </ul>
         <div className="interact">
+          {balance ? (
+            <p className='connect'>{Math.floor(balance * 100) / 100} {getSymbol(chainId)}</p>
+          ) : (
+            <button onClick={() => getBalance(true)} className='connect'>Connect</button>
+          )}
           {+window.ethereum.selectedAddress === +project.creator ? (
             +toClaim ? (
-              <button onClick={async () => {
+              <button className='claim' onClick={async () => {
                 try {
                   await window.ethereum.request({ method: "eth_requestAccounts" })
                   
@@ -67,9 +98,8 @@ function ProjectInfo () {
                   const contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
 
                   const tx = await contract.claimProjectFunds(projectId)
+                  updateStore({ message: 'Please wait…' })
                   await tx.wait()
-                  updateStore({ message: 'Loading…' })
-                  navigate(-1)
                   
                 } catch (error) {
                   console.error(error)
@@ -85,7 +115,7 @@ function ProjectInfo () {
             <>
               <span>I wish to help with</span>
               <input ref={input} type="number" name="amount" placeholder='1.0' />
-              <button onClick={async () => {
+              <button className='donate' onClick={async () => {
                 try {
                   await window.ethereum.request({ method: "eth_requestAccounts" })
   
@@ -95,16 +125,15 @@ function ProjectInfo () {
     
                   const value = ethers.utils.parseEther(input.current.value)
                   const tx = await contract.donateToProject(projectId, { value })
+                  updateStore({ message: 'Please wait…' })
                   await tx.wait()
-                  updateStore({ message: 'Loading…' })
-                  navigate(-1)
                   
                 } catch (error) {
                   console.error(error)
                   updateStore({ message: error.message })
                 }
               }}>
-                Donate now
+                Donate
               </button>
             </>
           )}

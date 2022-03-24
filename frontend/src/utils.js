@@ -1,15 +1,20 @@
 import { createContext } from 'react'
 import contractAddresses from './contracts/contract-address.json'
-import { abi } from './contracts/Contract.json'
+import Contract from './contracts/Contract.json'
 
 export const Context = createContext()
 
 export const getContract = chainId => contractAddresses[chainId]
-export const getAbi = () => abi
+export const getAbi = () => Contract.abi
 export const getSymbol = chainId => ({
   4: 'ETH',
   1337: 'ETH',
   44787: 'CELO',
+})[chainId]
+export const getNetwork = chainId => ({
+  4: 'Rinkeby Test Network',
+  1337: 'localhost',
+  44787: 'Celo Alfajores Testnet',
 })[chainId]
 
 export const encode = (text) => text.replace(/([ \w])\1+/g, (group, chr) => group.length + chr );

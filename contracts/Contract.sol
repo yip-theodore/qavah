@@ -18,9 +18,9 @@ contract Contract {
     mapping(bytes32 => Project) projects;
     bytes32[] projectIds;
 
-    event ProjectCreated(bytes32 id, address from);
-    event FundsDonated(bytes32 id, address from);
-    event FundsClaimed(bytes32 id, address from);
+    event ProjectCreated(bytes32 id, address indexed from);
+    event FundsDonated(bytes32 indexed id, address from);
+    event FundsClaimed(bytes32 indexed id, address from);
 
     function createProject(
         string calldata title,

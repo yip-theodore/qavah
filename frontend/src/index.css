@@ -68,6 +68,19 @@ h2 {
   display: flex;
   flex-direction: column;
   cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+.Project.mine::after {
+  content: '';
+  border-bottom: 2px solid #611f69;
+  height: 40px;
+  position: absolute;
+  width: 80px;
+  transform: rotate(40deg);
+  right: -45px;
+  top: -25px;
+  background: #611f69;
 }
 .image {
   margin: 0 auto;
@@ -174,7 +187,16 @@ h2 {
   max-width: 600px;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   z-index: 1;
+  padding-bottom: 0;
+}
+.NewProject::after {
+  content: '';
+  border-top: 2px solid #611f69;
+  margin: 20px -20px 2px;
 }
 .flex {
   display: flex;
@@ -208,6 +230,7 @@ input[name="requestedAmount"] {
 @media (min-width: 600px) {
   .NewProject {
     top: 60px;
+    height: auto;
   }
   input[name="image"] {
     width: 100%;
@@ -222,12 +245,12 @@ input[name="requestedAmount"] {
   background: #fbcc5c;
   border: 2px solid #611f69;
   border-radius: 10px;
-  padding: 20px;
   max-width: 600px;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   z-index: 1;
 }
 .top {
@@ -235,44 +258,93 @@ input[name="requestedAmount"] {
   justify-content: space-between;
   align-items: center;
 }
+.ProjectInfo .bar {
+  padding: 20px 20px 0;
+  position: sticky;
+  top: 0;
+  background: #fbcc5c;
+}
+.ProjectInfo .image {
+  margin-top: 20px;
+  font-size: calc((100vw - 4px - 2.9px) / (80 * 0.6))
+}
 .ProjectInfo .content {
   padding: 0;
-  margin-top: 20px;
+  position: relative;
+}
+.ProjectInfo .title {
+  margin: 20px 20px 10px;
+  display: block;
+}
+.ProjectInfo .description {
+  margin: 0 20px;
+  display: block;
 }
 .ProjectInfo .amounts {
   text-align: left;
 }
 .ProjectInfo .progress {
   margin-top: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
-.ProjectInfo .title {
-  display: block;
+ul {
+  padding-left: 20px;
+  margin: 20px;
+  display: flex;
+  flex-direction: column-reverse;
 }
-.ProjectInfo .description {
-  display: block;
+ul:empty {
+  margin-bottom: 0;
+}
+li {
+  list-style-type: square;
+  margin: 5px 0;
+}
+li span {
+  font-size: 12px;
 }
 .interact {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  position: sticky;
+  bottom: 2px;
+  border-top: 2px solid #611f69;
+  border-bottom: 2px solid #611f69;
+  right: 0;
+  left: 0;
+  padding: 10px 20px;
+  background: #fbcc5c;
 }
 .interact span {
   font-weight: bold;
 }
 .interact input {
-  margin-right: 10px;
   border: none;
-  width: 60px;
+  width: 50px;
   font-weight: bold;
+}
+.connect {
+  margin-right: auto;
+  margin: 10px auto 10px 0;
 }
 @media (min-width: 600px) {
   .ProjectInfo {
     top: 60px;
-    height: 80vh;
+    height: auto;
+    max-height: 80vh;
   }
   .ProjectInfo .image {
     font-size: calc((600px - 40px - 4px - 2.9px) / (80 * 0.6))
+  }
+  p.connect::before {
+    content: 'Current balance: ';
+  }
+  .interact input {
+    width: 70px;
+  }
+  .interact .donate::after {
+    content: ' now';
   }
 }
 .Message {
@@ -298,13 +370,6 @@ input[name="requestedAmount"] {
 }
 .Message button {
   align-self: self-start;
-}
-ul {
-  padding-left: 20px;
-}
-li {
-  list-style-type: square;
-  word-break: break-all;
 }
 .Outlet .overlay:nth-child(2) {
   position: fixed;

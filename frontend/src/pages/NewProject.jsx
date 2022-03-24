@@ -28,9 +28,9 @@ function NewProject () {
           window.encoded,
           JSON.stringify({ tree: window.huffman.encodeTree(), _w: 80 }),
         )
+        updateStore({ message: 'Please wait…' })
         await tx.wait()
-        updateStore({ message: 'Loading…' })
-        navigate(-1)
+        navigate(`/${chainId}`)
 
       } catch (error) {
         console.error(error)
@@ -44,7 +44,7 @@ function NewProject () {
         <input name='requestedAmount' type='number' step='0.001' placeholder='Amount' />
       </div>
       <div className='action'>
-        <Link to={-1}>Back</Link>
+        <Link to={`/${chainId}`}>Back</Link>
         <button type='submit'>Create project</button>
       </div>
     </form>

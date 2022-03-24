@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, Link, useParams, useNavigate } from "react-router-dom"
 import { ethers } from 'ethers'
-import { Context, getContract, getAbi, getSymbol, Huffman, decode } from './utils'
+import { Context, getContract, getAbi, getSymbol, Huffman, decode, getNetwork } from './utils'
 import './index.css'
 
 function App () {
@@ -15,15 +15,12 @@ function App () {
 
   const getProjects = async () => {
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum)
-      const contract = new ethers.Contract(getContract(chainId), getAbi(), provider)
-      window.projects = await contract.getProjects()
-      console.log(projects)
-      setProjects(window.projects)
+      window.projects = await window.contract.getProjects()
+      setProjects([ ...window.projects ].reverse())
       updateStore({ message: '' })
     } catch (error) {
       console.error(error)
-      updateStore({ message: 'Make sure you’re on the right network! Then reload the page.', disabled: true })
+      updateStore({ message: `Make sure you’re on ${getNetwork(chainId)}! Then reload the page.`, disabled: true })
     }
   }
 
@@ -31,12 +28,17 @@ function App () {
     if (window.ethereum === undefined) {
       return updateStore({ message: 'Please make sure you have MetaMask! Then reload the page.', disabled: true })
     }
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    const contract = new ethers.Contract(getContract(chainId), getAbi(), provider)
+    window.provider = new ethers.providers.Web3Provider(window.ethereum)
+    window.contract = new ethers.Contract(getContract(chainId), getAbi(), window.provider)
     getProjects()
-    contract.on('ProjectCreated', getProjects)
-    contract.on('FundsDonated', getProjects)
-    contract.on('FundsClaimed', getProjects)
+    window.contract.on('ProjectCreated', getProjects)
+    window.contract.on('FundsDonated', getProjects)
+    window.contract.on('FundsClaimed', getProjects)
+    return () => {
+      window.contract.off('ProjectCreated', getProjects)
+      window.contract.off('FundsDonated', getProjects)
+      window.contract.off('FundsClaimed', getProjects)
+    }
   }, [])
 
   return (
@@ -53,7 +55,7 @@ function App () {
             const decodedOnce = huffman2.decode(p.encodedImage)
             const percentage = p.fundedAmount.mul(10*10).div(p.requestedAmount).toNumber()
             return (
-              <Link to={p.id} className='Project' key={i}>
+              <Link to={p.id} className={`Project ${+window.ethereum.selectedAddress === +p.creator && 'mine'}`} key={i}>
                 <pre className='image'>{decode(decodedOnce).replaceAll('W', ' ').replaceAll('B', '•').match(/.{1,80}/g).join('\n')}</pre>
                 <div className="content">
                   <div className="title">
