@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import App from './App'
 import ProjectInfo from './pages/ProjectInfo'
@@ -10,10 +10,12 @@ ReactDOM.render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />}>
-          {/* <Route index element={<Home />} /> */}
-          <Route path="new" element={<NewProject />} />
-          <Route path=":projectId" element={<ProjectInfo />} />
+        <Route path="/">
+          <Route index element={<Navigate to="/4" replace />} />
+          <Route path=":chainId" element={<App />}>
+            <Route path="new" element={<NewProject />} />
+            <Route path=":projectId" element={<ProjectInfo />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

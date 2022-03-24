@@ -31,6 +31,8 @@ button, a:not(.Project) {
 }
 img, canvas {
   visibility: hidden;
+  position: absolute;
+  top: 0;
 }
 input, textarea {
   background: none;
@@ -137,10 +139,26 @@ h2 {
     padding-top: 20px;
   }
   .projects {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .image {
+    font-size: calc((100vw - 40px - 20px - 8px - 4px) / 2 / (80 * 0.6));
+  }
+}
+@media (min-width: 900px) {
+  .projects {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .image {
     font-size: calc((100vw - 40px - 40px - 12px - 6px) / 3 / (80 * 0.6));
+  }
+}
+@media (min-width: 1200px) {
+  .projects {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .image {
+    font-size: calc((100vw - 40px - 60px - 16px - 8px) / 4 / (80 * 0.6));
   }
 }
 .NewProject {
@@ -156,6 +174,7 @@ h2 {
   max-width: 600px;
   display: flex;
   flex-direction: column;
+  z-index: 1;
 }
 .flex {
   display: flex;
@@ -209,6 +228,7 @@ input[name="requestedAmount"] {
   flex-direction: column;
   height: 100vh;
   overflow: auto;
+  z-index: 1;
 }
 .top {
   display: flex;
@@ -251,4 +271,48 @@ input[name="requestedAmount"] {
     top: 60px;
     height: 80vh;
   }
+  .ProjectInfo .image {
+    font-size: calc((600px - 40px - 4px - 2.9px) / (80 * 0.6))
+  }
+}
+.Message {
+  position: fixed;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: auto;
+  background: #fbcc5c;
+  border: 2px solid #611f69;
+  border-radius: 10px;
+  padding: 10px 10px 10px 15px;
+  display: flex;
+  align-items: center;
+  word-break: break-word;
+  z-index: 1;
+}
+.Message span:first-letter {
+  text-transform: capitalize;
+}
+.Message span {
+  margin-right: 15px;
+}
+.Message button {
+  align-self: self-start;
+}
+ul {
+  padding-left: 20px;
+}
+li {
+  list-style-type: square;
+  word-break: break-all;
+}
+.Outlet .overlay:nth-child(2) {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+}
+.disabled {
+  pointer-events: none;
 }
