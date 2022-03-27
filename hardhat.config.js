@@ -12,10 +12,15 @@ module.exports = {
       accounts: [`0x${process.env.PRIVATE_KEY}`],
       chainId: 4,
     },
+    bsctestnet: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+      accounts: [`0x${process.env.PRIVATE_KEY}`],
+      chainId: 97,
+    },
     alfajores: {
       url: `https://celo-alfajores--rpc.datahub.figment.io/apikey/${process.env.DATAHUB_CELO_API_KEY}/`,
       accounts: [`0x${process.env.PRIVATE_KEY}`],
       chainId: 44787,
-    }
+    },
   }
 };

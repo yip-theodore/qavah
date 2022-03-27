@@ -32,10 +32,9 @@ contract Contract {
         require(bytes(title).length > 0, "Project title must not be empty.");
         require(requestedAmount > 0, "Requested amount be greater than 0.");
 
-        bytes32 id = random();
-        while (bytes(projects[id].title).length > 0) {
-            id = random();
-        }
+        bytes32 id = keccak256(abi.encodePacked(block.timestamp, projectIds.length));
+        require(bytes(projects[id].title).length == 0, "Internal error.");
+
         Project memory project;
         project.id = id;
         project.creator = msg.sender;
@@ -91,9 +90,5 @@ contract Contract {
         project.claimedAmount += transferAmount;
 
         emit FundsClaimed(id, msg.sender);
-    }
-
-    function random() private view returns (bytes32) {
-        return keccak256(abi.encodePacked(block.difficulty, block.timestamp));
     }
 }
