@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useContext } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { ethers } from 'ethers'
-import { Context, getContract, getAbi, getSymbol, Huffman, decode } from '../utils'
+import { Context, getContract, getAbi, getSymbol, Qavah } from '../utils'
 
 function ProjectInfo () {
   const { chainId, projectId } = useParams()
@@ -11,6 +11,8 @@ function ProjectInfo () {
   const [ project, setProject ] = useState(null)
   const [ balance, setBalance ] = useState('')
   const input = useRef()
+
+  const [ qavahs, setQavahs ] = useState([])
 
   const getBalance = async force => {
     if (force) {
@@ -32,6 +34,10 @@ function ProjectInfo () {
       try {
         const project = await contract.getProject(projectId)
         if (!project.title) return
+        window.qavah = new ethers.Contract(project.qavah, Qavah.abi, provider.getSigner())
+        setQavahs(await Promise.all([...Array(project.donators.length)].map((_, i) => 
+          window.qavah.tokenURI(i).then(q => JSON.parse(atob(q.split(',')[1]))).catch(() => '')
+        )))
         setProject(project)
       } catch (error) {
         console.error(error)
@@ -50,8 +56,6 @@ function ProjectInfo () {
 
   if (!project) return null
 
-  const huffman2 = Huffman.Tree.decodeTree(JSON.parse(project.imageMeta).tree)
-  const decodedOnce = huffman2.decode(project.encodedImage)
   const percentage = project.fundedAmount.mul(10*10).div(project.requestedAmount).toNumber()
   const toClaim = ethers.utils.formatEther(project.fundedAmount.sub(project.claimedAmount))
   
@@ -64,7 +68,7 @@ function ProjectInfo () {
         </div>
         <div className='progress'><div style={{ width: percentage + '%' }} /></div>
       </div>
-      <pre className='image'>{decode(decodedOnce).replaceAll('W', ' ').replaceAll('B', '•').match(/.{1,80}/g).join('\n')}</pre>
+      <img className='img' src={project.encodedImage} alt="" />
       <div className="content">
         <div className="title">
           <h3>{project.title}</h3>
@@ -78,6 +82,7 @@ function ProjectInfo () {
               ) : (
                 <span>{d}</span>
               )} donated {ethers.utils.formatEther(project.donatedAmounts[i])} {getSymbol(chainId)}
+              {qavahs[i] && <object data={qavahs[i].image} type="image/svg+xml" />}
             </li>
           )}
         </ul>

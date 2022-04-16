@@ -11,7 +11,7 @@ ReactDOM.render(
     <BrowserRouter>
       <Routes>
         <Route path="/">
-          <Route index element={<Navigate to="/97" replace />} />
+          <Route index element={<Navigate to="/44787" replace />} />
           <Route path=":chainId" element={<App />}>
             <Route path="new" element={<NewProject />} />
             <Route path=":projectId" element={<ProjectInfo />} />

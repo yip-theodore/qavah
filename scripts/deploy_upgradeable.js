@@ -28,6 +28,12 @@ async function saveFrontendFiles (contract) {
     `${__dirname}/../frontend/src/contracts/Contract.json`,
     JSON.stringify(contractArtifact, null, 2)
   )
+
+  const qavahArtifact = await artifacts.readArtifact('Qavah')
+  await fs.writeFile(
+    `${__dirname}/../frontend/src/contracts/Qavah.json`,
+    JSON.stringify(qavahArtifact, null, 2)
+  )
 }
 
 main()

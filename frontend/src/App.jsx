@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, Link, useParams, useNavigate } from "react-router-dom"
 import { ethers } from 'ethers'
-import { Context, getContract, getAbi, getSymbol, Huffman, decode, getNetwork } from './utils'
+import { Context, getContract, getAbi, getSymbol, getNetwork } from './utils'
 import './index.css'
 
 function App () {
@@ -51,12 +51,10 @@ function App () {
         <h2>All projects</h2>
         <div className="projects">
           {projects.map((p, i) => {
-            const huffman2 = Huffman.Tree.decodeTree(JSON.parse(p.imageMeta).tree)
-            const decodedOnce = huffman2.decode(p.encodedImage)
             const percentage = p.fundedAmount.mul(10*10).div(p.requestedAmount).toNumber()
             return (
               <Link to={p.id} className={`Project ${+window.ethereum.selectedAddress === +p.creator && 'mine'}`} key={i}>
-                <pre className='image'>{decode(decodedOnce).replaceAll('W', ' ').replaceAll('B', '•').match(/.{1,80}/g).join('\n')}</pre>
+                <img className='img' src={p.encodedImage} alt="" />
                 <div className="content">
                   <div className="title">
                     <h3>{p.title}</h3>

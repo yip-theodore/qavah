@@ -3,7 +3,18 @@ require("@nomiclabs/hardhat-waffle");
 require('@openzeppelin/hardhat-upgrades');
 
 module.exports = {
-  solidity: "0.8.4",
+  solidity: {
+    version: "0.8.4",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1,
+        details: {
+          yul: false,
+        },
+      }
+    }
+  },
   networks: {
     hardhat: { chainId: 1337 },
     localhost: { chainId: 1337 },

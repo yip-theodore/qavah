@@ -76,11 +76,11 @@ h2 {
   border-bottom: 2px solid #611f69;
   height: 40px;
   position: absolute;
-  width: 80px;
-  transform: rotate(40deg);
+  width: 60px;
+  transform: rotate(45deg);
   right: -45px;
-  top: -25px;
-  background: #611f69;
+  top: -20px;
+  background: #fbcc5c;
 }
 .image {
   margin: 0 auto;
@@ -184,7 +184,7 @@ h2 {
   border: 2px solid #611f69;
   border-radius: 10px;
   padding: 20px;
-  max-width: 600px;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -198,7 +198,7 @@ h2 {
   border-top: 2px solid #611f69;
   margin: 20px -20px 2px;
 }
-.flex {
+.more {
   display: flex;
 }
 .action {
@@ -263,6 +263,7 @@ input[name="requestedAmount"] {
   position: sticky;
   top: 0;
   background: #fbcc5c;
+  z-index: 1;
 }
 .ProjectInfo .image {
   margin-top: 20px;
@@ -380,4 +381,67 @@ li span {
 }
 .disabled {
   pointer-events: none;
+}
+#container {
+  perspective: 500px;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 20px;
+  transition: 1s;
+  transform-style: preserve-3d;
+  position: relative;
+}
+#container:empty {
+  background: rgba(97, 31, 105, 0.1);
+  border-radius: 5px;
+}
+#container img {
+  width: 100%;
+  border-radius: 5px;
+}
+svg {
+  position: absolute;
+  display: block;
+  transition: 1s;
+  border-radius: 5px;
+}
+#container:hover svg:nth-child(1) {
+  transform: rotate3d(0, 1, 0, 90deg) translateZ(-180px);
+}
+#container:hover svg:nth-child(2) {
+  transform: rotate3d(0, 1, 0, 90deg) translateZ(-140px);
+}
+#container:hover svg:nth-child(3) {
+  transform: rotate3d(0, 1, 0, 90deg) translateZ(-100px);
+}
+#container:hover svg:nth-child(4) {
+  transform: rotate3d(0, 1, 0, 90deg) translateZ(-60px);
+}
+#container:hover svg:nth-child(5) {
+  transform: rotate3d(0, 1, 0, 90deg) translateZ(-20px);
+}
+#container:hover svg:nth-child(6) {
+  transform: rotate3d(0, 1, 0, 90deg) translateZ(20px);
+}
+#container:hover svg:nth-child(7) {
+  transform: rotate3d(0, 1, 0, 90deg) translateZ(60px);
+}
+#container:hover svg:nth-child(8) {
+  transform: rotate3d(0, 1, 0, 90deg) translateZ(100px);
+}
+#container:hover svg:nth-child(9) {
+  transform: rotate3d(0, 1, 0, 90deg) translateZ(140px);
+}
+#container:hover svg:nth-child(10) {
+  transform: rotate3d(0, 1, 0, 90deg) translateZ(180px);
+}
+.img {
+  visibility: visible;
+  position: relative;
+  display: block;
+}
+.ProjectInfo .img {
+  margin: 20px 20px 0;
+}
+object {
+  display: none;
 }
