@@ -3,7 +3,10 @@ const fs = require('fs').promises
 
 async function main () {
   const Contract = await ethers.getContractFactory('Contract')
-  const contract = await upgrades.deployProxy(Contract)
+  const contract = await upgrades.deployProxy(Contract, [
+    '0xc351628EB244ec633d5f21fBD6621e1a683B1181',
+    'http://localhost:3000/1337/'
+  ])
   await contract.deployed()
   console.log('Contract deployed to:', contract.address)
   await saveFrontendFiles(contract)
@@ -33,6 +36,12 @@ async function saveFrontendFiles (contract) {
   await fs.writeFile(
     `${__dirname}/../frontend/src/contracts/Qavah.json`,
     JSON.stringify(qavahArtifact, null, 2)
+  )
+
+  const cUSDArtifact = await artifacts.readArtifact('CUSD')
+  await fs.writeFile(
+    `${__dirname}/../frontend/src/contracts/CUSD.json`,
+    JSON.stringify(cUSDArtifact, null, 2)
   )
 }
 

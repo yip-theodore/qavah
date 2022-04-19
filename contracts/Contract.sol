@@ -1,23 +1,39 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./Qavah.sol";
 
-contract Contract {
+contract Contract is Initializable {
+    address public usdTokenAddress;
+    string public siteUrl;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
+    function initialize(address tokenAddress, string calldata url)
+        public
+        initializer
+    {
+        usdTokenAddress = tokenAddress;
+        siteUrl = url;
+    }
+
     struct Project {
         bytes32 id;
         address creator;
         string title;
         uint256 requestedAmount;
         string description;
-        string encodedImage;
-        string imageMeta;
+        string image;
         uint256 fundedAmount;
         uint256 claimedAmount;
         address[] donators;
-        uint256[] donatedAmounts;
+        uint256 createdAt;
         Qavah qavah;
     }
     mapping(bytes32 => Project) projects;
@@ -31,8 +47,7 @@ contract Contract {
         string calldata title,
         string calldata description,
         uint256 requestedAmount,
-        string calldata encodedImage,
-        string calldata imageMeta
+        string calldata image
     ) public {
         require(bytes(title).length > 0, "Project title must not be empty.");
         require(requestedAmount > 0, "Requested amount be greater than 0.");
@@ -48,9 +63,8 @@ contract Contract {
         project.title = title;
         project.description = description;
         project.requestedAmount = requestedAmount;
-        project.encodedImage = encodedImage;
-        project.imageMeta = imageMeta;
-
+        project.image = image;
+        project.createdAt = block.timestamp;
         project.qavah = new Qavah();
 
         projects[id] = project;
@@ -79,35 +93,50 @@ contract Contract {
         return count;
     }
 
-    function donateToProject(bytes32 id) public payable {
-        require(msg.value > 0, "Donation value must be greater than 0.");
+    function donateToProject(bytes32 id, uint256 amount) public {
         Project storage project = projects[id];
+        require(
+            project.fundedAmount < project.requestedAmount,
+            "Campaign is closed."
+        );
         require(
             msg.sender != project.creator,
             "You cannot donate to yourself."
         );
-        project.fundedAmount += msg.value;
+        require(
+            IERC20(usdTokenAddress).transferFrom(
+                msg.sender,
+                address(this),
+                amount
+            ),
+            "Transfer failed."
+        );
+        uint256 donationPercentage = (100 * amount) / project.requestedAmount;
+        require(donationPercentage > 0, "Amount too low.");
+        uint256 donationAmount = (donationPercentage *
+            project.requestedAmount) / 100;
+        project.fundedAmount += donationAmount;
         project.donators.push(msg.sender);
-        project.donatedAmounts.push(msg.value);
 
         bytes memory svg = abi.encodePacked(
             '<svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg"><style>image { opacity: 0.2; } image:nth-of-type(-n+',
             Strings.toString(project.donators.length),
             ") { opacity: 1; }</style>",
-            getTilesBytes(project.encodedImage, project.id),
+            getTilesBytes(project.image, project.id),
             "</svg>"
         );
         bytes memory dataURI = abi.encodePacked(
-            "{",
-            '"name": "Qavah #',
+            '{ "name": "Qavah #',
             Strings.toString(getQavahsCount()),
-            '",',
-            '"description": "That is nice",',
-            '"image": "',
-            "data:image/svg+xml;base64,",
+            '", "description": "',
+            abi.encodePacked(siteUrl, Strings.toHexString(uint256(id))),
+            '", "image": "data:image/svg+xml;base64,',
             Base64.encode(svg),
-            '"'
-            "}"
+            '", "amount": ',
+            Strings.toString(donationAmount / 1e18),
+            ', "timestamp": ',
+            Strings.toString(block.timestamp),
+            " }"
         );
         project.qavah.safeMint(
             msg.sender,
@@ -137,20 +166,21 @@ contract Contract {
         pure
         returns (bytes memory)
     {
-        bytes[] memory tiles = new bytes[](25);
-        for (uint256 y = 0; y < 5; y++) {
-            for (uint256 x = 0; x < 5; x++) {
-                tiles[y * 5 + x] = abi.encodePacked(
+        uint256 root = 2;
+        bytes[] memory tiles = new bytes[](root * root);
+        for (uint256 y = 0; y < root; y++) {
+            for (uint256 x = 0; x < root; x++) {
+                tiles[y * root + x] = abi.encodePacked(
                     '<image href="',
                     src,
                     '" width="640" height="360" clip-path="inset(',
-                    Strings.toString(y * 10),
+                    Strings.toString((y * 100) / root),
                     "% ",
-                    Strings.toString((10 - x - 1) * 10),
+                    Strings.toString(((root - x - 1) * 100) / root),
                     "% ",
-                    Strings.toString((10 - y - 1) * 10),
+                    Strings.toString(((root - y - 1) * 100) / root),
                     "% ",
-                    Strings.toString(x * 10),
+                    Strings.toString((x * 100) / root),
                     '%)"></image>'
                 );
             }
@@ -172,8 +202,10 @@ contract Contract {
         uint256 transferAmount = project.fundedAmount - project.claimedAmount;
         require(transferAmount > 0, "There is nothing to claim.");
 
-        (bool success, ) = msg.sender.call{value: transferAmount}("");
-        require(success, "Failed to send funds to project creator.");
+        require(
+            IERC20(usdTokenAddress).transfer(msg.sender, transferAmount),
+            "Transfer failed."
+        );
         project.claimedAmount += transferAmount;
 
         emit FundsClaimed(id, msg.sender);

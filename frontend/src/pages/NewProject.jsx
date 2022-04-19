@@ -75,9 +75,8 @@ function NewProject() {
         const tx = await contract.createProject(
           elements['title'].value,
           elements['description'].value,
-          ethers.utils.parseEther(elements['requestedAmount'].value),
+          ethers.utils.parseUnits((elements['requestedAmount'].value * 100).toString(), 18),
           url,
-          '',
         )
         updateStore({ message: 'Please wait…' })
         await tx.wait()

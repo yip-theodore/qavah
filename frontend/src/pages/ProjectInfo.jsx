@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useContext } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { ethers } from 'ethers'
-import { Context, getContract, getAbi, getSymbol, Qavah } from '../utils'
+import { Context, getContract, getAbi, Qavah, useBalance, getCUSDContract } from '../utils'
 
 function ProjectInfo () {
   const { chainId, projectId } = useParams()
@@ -9,20 +9,20 @@ function ProjectInfo () {
   const { store, updateStore } = useContext(Context)
   
   const [ project, setProject ] = useState(null)
-  const [ balance, setBalance ] = useState('')
   const input = useRef()
 
   const [ qavahs, setQavahs ] = useState([])
+  const { balance, getBalance } = useBalance()
 
-  const getBalance = async force => {
-    if (force) {
-      await window.ethereum.request({ method: "eth_requestAccounts" })
-    }
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    const [ account ] = await window.ethereum.request({ method: "eth_accounts" })
-    const balance = await provider.getBalance(account)
-    setBalance(ethers.utils.formatEther(balance))
-  }
+  // const getBalance = async force => {
+  //   if (force) {
+  //     await window.ethereum.request({ method: "eth_requestAccounts" })
+  //   }
+  //   const provider = new ethers.providers.Web3Provider(window.ethereum)
+  //   const [ account ] = await window.ethereum.request({ method: "eth_accounts" })
+  //   const balance = await provider.getBalance(account)
+  //   setBalance(ethers.utils.formatEther(balance))
+  // }
 
   useEffect(() => {
     if (window.ethereum === undefined) {
@@ -56,19 +56,19 @@ function ProjectInfo () {
 
   if (!project) return null
 
-  const percentage = project.fundedAmount.mul(10*10).div(project.requestedAmount).toNumber()
-  const toClaim = ethers.utils.formatEther(project.fundedAmount.sub(project.claimedAmount))
+  const percentage = project.fundedAmount.mul(100).div(project.requestedAmount).toNumber()
+  const toClaim = ethers.utils.formatUnits(project.fundedAmount.sub(project.claimedAmount), 18) / 100
   
   return (
     <div className='ProjectInfo'>
       <div className='bar'>
         <div className="top">
           <Link to={`/${chainId}`}>Back</Link>
-          <span className='amounts'>{percentage}% funded of <b>{ethers.utils.formatEther(project.requestedAmount)} {getSymbol(chainId)}</b></span>
+          <span className='amounts'>{percentage}% funded of <b>{ethers.utils.formatUnits(project.requestedAmount, 18) / 100} cUSD</b></span>
         </div>
         <div className='progress'><div style={{ width: percentage + '%' }} /></div>
       </div>
-      <img className='img' src={project.encodedImage} alt="" />
+      <img className='img' src={project.image} alt="" />
       <div className="content">
         <div className="title">
           <h3>{project.title}</h3>
@@ -81,14 +81,14 @@ function ProjectInfo () {
                 <b>You</b>
               ) : (
                 <span>{d}</span>
-              )} donated {ethers.utils.formatEther(project.donatedAmounts[i])} {getSymbol(chainId)}
+              )} donated {qavahs[i].amount / 100} cUSD
               {qavahs[i] && <object data={qavahs[i].image} type="image/svg+xml" />}
             </li>
           )}
         </ul>
         <div className="interact">
           {balance ? (
-            <p className='connect'>{Math.floor(balance * 100) / 100} {getSymbol(chainId)}</p>
+            <p className='connect'>{(balance / 100).toFixed(2)} cUSD</p>
           ) : (
             <button onClick={() => getBalance(true)} className='connect'>Connect</button>
           )}
@@ -105,13 +105,14 @@ function ProjectInfo () {
                   const tx = await contract.claimProjectFunds(projectId)
                   updateStore({ message: 'Please wait…' })
                   await tx.wait()
+                  getBalance()
                   
                 } catch (error) {
                   console.error(error)
                   updateStore({ message: error.message })
                 }
               }}>
-                Claim {toClaim} {getSymbol(chainId)}
+                Claim {toClaim} cUSD
               </button>
             ) : (
               <span>Nothing to claim for now</span>
@@ -127,11 +128,14 @@ function ProjectInfo () {
                   const provider = new ethers.providers.Web3Provider(window.ethereum)
                   const signer = provider.getSigner()
                   const contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
-    
-                  const value = ethers.utils.parseEther(input.current.value)
-                  const tx = await contract.donateToProject(projectId, { value })
+                  const cUSD = getCUSDContract(signer)
+
+                  const value = ethers.utils.parseUnits((input.current.value * 100).toString(), 18)
+                  await cUSD.approve(getContract(chainId), value)
+                  const tx = await contract.donateToProject(projectId, value)
                   updateStore({ message: 'Please wait…' })
                   await tx.wait()
+                  getBalance()
                   
                 } catch (error) {
                   console.error(error)

@@ -54,7 +54,7 @@ function App () {
             const percentage = p.fundedAmount.mul(10*10).div(p.requestedAmount).toNumber()
             return (
               <Link to={p.id} className={`Project ${+window.ethereum.selectedAddress === +p.creator && 'mine'}`} key={i}>
-                <img className='img' src={p.encodedImage} alt="" />
+                <img className='img' src={p.image} alt="" />
                 <div className="content">
                   <div className="title">
                     <h3>{p.title}</h3>
@@ -63,7 +63,7 @@ function App () {
                   <div className="bottom">
                     <div>
                       <div className='progress'><div style={{ width: percentage + '%' }} /></div>
-                      <span className='amounts'>{percentage}% funded of <b>{ethers.utils.formatEther(p.requestedAmount)} {getSymbol(chainId)}</b></span>
+                      <span className='amounts'>{percentage}% funded of <b>{ethers.utils.formatUnits(p.requestedAmount, 18) / 100} cUSD</b></span>
                     </div>
                   </div>
                 </div>
@@ -73,7 +73,7 @@ function App () {
         </div>
         <div className='Outlet'>
           <Outlet />
-          <div className="overlay" onClick={() => navigate(`/${chainId}`)} />
+          <div className="overlay" />
         </div>
         {store.message && (
           <div className='Message'>

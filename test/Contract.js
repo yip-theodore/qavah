@@ -2,27 +2,58 @@ const { expect } = require("chai");
 
 describe("Contract", function () {
 
-  let Contract, contract, creator, donator
+  let cUSD, contract, qavah, addr1, addr2, p
 
   beforeEach(async function () {
-    Contract = await ethers.getContractFactory("Contract");
-    [creator, donator] = await ethers.getSigners();
-    contract = await Contract.deploy();
-    await contract.deployed();
+    [ creator, addr1, addr2 ] = await ethers.getSigners()
+    p = (amount) => ethers.utils.parseUnits((amount * 100).toString(), 18)
+
+    const CUSD = await ethers.getContractFactory('CUSD')
+    cUSD = await CUSD.deploy(p(1000))
+    await cUSD.deployed()
+
+    const Contract = await ethers.getContractFactory("Contract")
+    contract = await upgrades.deployProxy(Contract, [ cUSD.address, 'http://localhost:3000/1337/' ])
+    await contract.deployed()
+    console.log(contract.address)
+
+    const qavahArtifact = await artifacts.readArtifact('Qavah')
+    qavah = (address) => new ethers.Contract(address, qavahArtifact.abi, creator)
   })
 
-  it("should enable creators to create a project", async function () {
+  it("should be good", async function () {
     const tx = await contract.createProject(
       "A project title",
       "A project description. It can be a few sentences, or it can be long paragraphs. I'll keep mine real short.",
-      ethers.utils.parseEther("100"),
-      "$'ËËËÏ>|ùóçÏ>|ùóçÏ>|\u001c¼¼eÌ\\\u0010r8ùyöIO>|ùóäq>^OçÁËÏËÄùä9yóçÏ.'ÁÇËËËq#\u0012\\ù\u001cIrðm)óçÏÏÃåâ{q>|GÇËÃãåí¹óçÂçÇÄ\\\u001cFÎO\u001f'ÇÃãáóÎ\u000ey,ùð÷#ÇÂãáë=Û·dPùò8||\u001c¼.^Üù{ví9x\\øøÁË¹óçÛ·câ^>#ãàÖ^î}ø\\ùð¸øøøø9îãÝ»´ãçÁÏÇÄ\\{rîÝ»D|.$¸8ùyy\u001b=ËÎ{¹ðùxù>Oç­­»$ çÈàâ\u000e\u0017/.íÏ\u000bwnÑ'ÏËÏ·sÝXO\u0007>\u001f\u0012\\\u001cO>ÝÚÙ\u0014\u001c¼|¼.\u001f\u0007//=Ï¹îzÜ÷g>\u000e>\u0017/\u001f\u000fÁ»>Åkn>\rË¸ËÁÃçÇ÷h³ÃãàåàäøãÜºÏµ·>|¼¼\u000bÈçÃãÉÚÂçÏ\u0012\\^^O>Ü»µµ·\u001eáòññò8Ë¹îÖÖÜ|{\u001f\u000bËÁÇÁÜõ´â\u001f/>\"äqðqñî=ÚÛ>|øøáñ\u000f=ØçÄùx|øù\u001c¼¼ø\\ùîÂÖ\u000e|ø9òñ>$¹\u001c¼\u001c¼ñKÉîFâKÇËÇ¹ça#>^|>|Iqñ#·c\u0010q\u0007>$¹òññóÝÖ|ùóãç¹ðq\u0017'ËÈÜ¹\"O¸\u0007>|¼¼=gË§/>\u001f#\\|¼\u001aÏ#'ËËËÁÄ·=m\u0016)òòñò8øçÏ;röA\u0012\\ø8/>|Ia=Ï[vE>|,2",
-      "{\"tree\":[[[[\"5\",[\"8\",\"7\"]],[\"1\",\"4\"]],[[[\"6\",[\"0\",\"9\"]],\"3\"],\"2\"]],[\"B\",\"W\"]],\"_w\":80}",
+      p(400),
+      "https://ipfs.infura.io/ipfs/QmP64siF2nZZJJJnC5Rcfraxw6zmcaAG1X1S9XfZkNcVqD",
     )
     await tx.wait()
     const projects = await contract.getProjects()
     console.log(projects)
-    expect(projects.length).to.not.equal(0)
+
+    await cUSD.transfer(addr1.address, p(400))
+    await cUSD.connect(addr1).approve(contract.address, p(400))
+    await expect(contract.connect(addr1).donateToProject(projects[0].id, p(0.10))).to.be.reverted
+    await contract.connect(addr1).donateToProject(projects[0].id, p(300.90))
+
+    await cUSD.transfer(addr2.address, p(200))
+    await cUSD.connect(addr2).approve(contract.address, p(200))
+    await contract.connect(addr2).donateToProject(projects[0].id, p(100))
+    await expect(contract.connect(addr2).donateToProject(projects[0].id, p(50))).to.be.reverted
+
+    const project = await contract.getProject(projects[0].id)
+    expect(project.fundedAmount).to.equal(p(400))
+
+    const owner1 = await qavah(project.qavah).ownerOf(0)
+    expect(owner1).to.equal(addr1.address)
+    const tokenURI1 = await qavah(project.qavah).tokenURI(0)
+    const token1 = JSON.parse(atob(tokenURI1.split(',')[1]))
+    console.log(token1)
+    expect(token1.amount / 100).to.equal(300)
+
+    const owner2 = await qavah(project.qavah).ownerOf(1)
+    expect(owner2).to.equal(addr2.address)
   })
 
 })
