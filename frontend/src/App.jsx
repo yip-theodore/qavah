@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, Link, useParams, useNavigate } from "react-router-dom"
 import { ethers } from 'ethers'
-import { Context, getContract, getAbi, getSymbol, getNetwork } from './utils'
+import { Context, getContract, getAbi, getNetwork } from './utils'
+import Header from './components/Header'
 import './index.css'
 
 function App () {
   const { chainId } = useParams()
   const navigate = useNavigate()
-  const [ store, setStore ] = useState({})
+  const [ store, setStore ] = useState({
+    balance: null,
+  })
 
   const [ projects, setProjects ] = useState([])
 
@@ -15,9 +18,10 @@ function App () {
 
   const getProjects = async () => {
     try {
+      if (window.ethereum.chainId && +window.ethereum.chainId !== +chainId) throw Error('wrong chain!')
       window.projects = await window.contract.getProjects()
       setProjects([ ...window.projects ].reverse())
-      updateStore({ message: '' })
+
     } catch (error) {
       console.error(error)
       updateStore({ message: `Make sure you’re on ${getNetwork(chainId)}! Then reload the page.`, disabled: true })
@@ -44,16 +48,13 @@ function App () {
   return (
     <Context.Provider value={{ store, updateStore }}>
       <main>
-        <header>
-          <h1>qavah</h1>
-          <Link to='new' className={store.disabled && 'disabled'}>New project</Link>
-        </header>
-        <h2>All projects</h2>
+        <Header />
+        <h2>All campaigns</h2>
         <div className="projects">
           {projects.map((p, i) => {
-            const percentage = p.fundedAmount.mul(10*10).div(p.requestedAmount).toNumber()
+            const percentage = p.fundedAmount.mul(100).div(p.requestedAmount).toNumber()
             return (
-              <Link to={p.id} className={`Project ${+window.ethereum.selectedAddress === +p.creator && 'mine'}`} key={i}>
+              <Link to={p.id} className={`Project plain ${+window.ethereum.selectedAddress === +p.creator && 'mine'}`} key={p.id}>
                 <img className='img' src={p.image} alt="" />
                 <div className="content">
                   <div className="title">
@@ -63,7 +64,7 @@ function App () {
                   <div className="bottom">
                     <div>
                       <div className='progress'><div style={{ width: percentage + '%' }} /></div>
-                      <span className='amounts'>{percentage}% funded of <b>{ethers.utils.formatUnits(p.requestedAmount, 18) / 100} cUSD</b></span>
+                      <span className='amounts'>{percentage}% funded of <b>{ethers.utils.formatUnits(p.requestedAmount, 18)} cUSD</b></span>
                     </div>
                   </div>
                 </div>

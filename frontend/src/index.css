@@ -20,7 +20,7 @@ body {
   color: #611f69;
   margin: 20px;
 }
-button, a:not(.Project) {
+button:not(.plain), a:not(.plain) {
   background: none;
   border: none;
   padding: 2px 0;
@@ -48,14 +48,23 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+  z-index: 1;
+}
+.logo {
+  margin: 0 auto 5px 0;
 }
 h1 {
   margin: 0;
-  margin-bottom: 5px;
+}
+header a {
+  margin-left: 20px;
 }
 h2 {
   padding: 5px 0;
   border-bottom: 2px solid #611f69;
+  margin-top: 0;
+  padding-top: 20px;
 }
 .projects {
   display: grid;
@@ -148,9 +157,6 @@ h2 {
   text-align: right;
 }
 @media (min-width: 600px) {
-  h2 {
-    padding-top: 20px;
-  }
   .projects {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -274,11 +280,14 @@ input[name="requestedAmount"] {
   position: relative;
 }
 .ProjectInfo .title {
-  margin: 20px 20px 10px;
+  margin: 20px 20px 0;
   display: block;
 }
-.ProjectInfo .description {
+.ProjectInfo .creator {
   margin: 0 20px;
+}
+.ProjectInfo .description {
+  margin: 10px 20px 0;
   display: block;
 }
 .ProjectInfo .amounts {
@@ -299,9 +308,9 @@ ul:empty {
 }
 li {
   list-style-type: square;
-  margin: 5px 0;
+  margin-bottom: 5px;
 }
-li span {
+.small {
   font-size: 12px;
 }
 .interact {
@@ -329,6 +338,9 @@ li span {
   margin-right: auto;
   margin: 10px auto 10px 0;
 }
+.donate {
+  margin-left: 20px;
+}
 @media (min-width: 600px) {
   .ProjectInfo {
     top: 60px;
@@ -340,9 +352,6 @@ li span {
   }
   p.connect::before {
     content: 'Current balance: ';
-  }
-  .interact input {
-    width: 70px;
   }
   .interact .donate::after {
     content: ' now';
@@ -379,8 +388,9 @@ li span {
   left: 0;
   bottom: 0;
 }
-.disabled {
+a.disabled {
   pointer-events: none;
+  border-bottom-width: 0;
 }
 #container {
   perspective: 500px;
@@ -438,10 +448,57 @@ svg {
   visibility: visible;
   position: relative;
   display: block;
+  aspect-ratio: 16 / 9;
 }
 .ProjectInfo .img {
   margin: 0 20px;
 }
 object {
-  display: none;
+  pointer-events: none;
+  z-index: 1;
+}
+.Profile {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  margin: auto;
+  background: #fbcc5c;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  z-index: 1;
+  padding: 0 20px 20px;
+}
+.Profile h2 {
+  position: sticky;
+  top: 0;
+  background: #fbcc5c;
+  z-index: 2;
+}
+.contributions .Project {
+  background: #611f69;
+}
+.contributions .Project::before {
+  content: '';
+  position: absolute;
+  background: #fbcc5c;
+  inset: 10%;
+}
+a.userAddress {
+  font-weight: normal;
+  text-transform: none;
+  border-bottom: none;
+  font-size: 12px;
+  vertical-align: middle;
+  display: inline-block;
+  max-width: 100px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+a.userAddress:hover {
+  text-decoration: underline;
 }

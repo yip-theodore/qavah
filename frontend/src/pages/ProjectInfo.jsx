@@ -12,17 +12,7 @@ function ProjectInfo () {
   const input = useRef()
 
   const [ qavahs, setQavahs ] = useState([])
-  const { balance, getBalance } = useBalance()
-
-  // const getBalance = async force => {
-  //   if (force) {
-  //     await window.ethereum.request({ method: "eth_requestAccounts" })
-  //   }
-  //   const provider = new ethers.providers.Web3Provider(window.ethereum)
-  //   const [ account ] = await window.ethereum.request({ method: "eth_accounts" })
-  //   const balance = await provider.getBalance(account)
-  //   setBalance(ethers.utils.formatEther(balance))
-  // }
+  const getBalance = useBalance(chainId)
 
   useEffect(() => {
     if (window.ethereum === undefined) {
@@ -34,20 +24,20 @@ function ProjectInfo () {
       try {
         const project = await contract.getProject(projectId)
         if (!project.title) return
-        window.qavah = new ethers.Contract(project.qavah, Qavah.abi, provider.getSigner())
+        window.qavah = new ethers.Contract(project.qavah, Qavah.abi, provider)
         setQavahs(await Promise.all([...Array(project.donators.length)].map((_, i) => 
           window.qavah.tokenURI(i).then(q => JSON.parse(atob(q.split(',')[1]))).catch(() => '')
         )))
         setProject(project)
       } catch (error) {
         console.error(error)
-        updateStore({ message: error.message, disabled: true })
+        updateStore({ message: error.data?.message || error.message, disabled: true })
       }
     }
     getProject()
     contract.on(contract.filters.FundsDonated(projectId), getProject)
     contract.on(contract.filters.FundsClaimed(projectId), getProject)
-    getBalance()
+    // getBalance()
     return () => {
       contract.off(contract.filters.FundsDonated(projectId), getProject)
       contract.off(contract.filters.FundsClaimed(projectId), getProject)
@@ -57,14 +47,15 @@ function ProjectInfo () {
   if (!project) return null
 
   const percentage = project.fundedAmount.mul(100).div(project.requestedAmount).toNumber()
-  const toClaim = ethers.utils.formatUnits(project.fundedAmount.sub(project.claimedAmount), 18) / 100
-  
+  const toClaim = ethers.utils.formatUnits(project.fundedAmount.sub(project.claimedAmount), 18)
+  const requested = ethers.utils.formatUnits(project.requestedAmount, 18)
+
   return (
     <div className='ProjectInfo'>
       <div className='bar'>
         <div className="top">
           <Link to={`/${chainId}`}>Back</Link>
-          <span className='amounts'>{percentage}% funded of <b>{ethers.utils.formatUnits(project.requestedAmount, 18) / 100} cUSD</b></span>
+          <span className='amounts'>{percentage}% funded of <b>{requested} cUSD</b></span>
         </div>
         <div className='progress'><div style={{ width: percentage + '%' }} /></div>
       </div>
@@ -73,22 +64,27 @@ function ProjectInfo () {
         <div className="title">
           <h3>{project.title}</h3>
         </div>
+        {+window.ethereum.selectedAddress !== +project.creator && (
+          <div className='creator'>
+            <span className='small'>by</span> <Link to={`/${chainId}/user/${project.creator.toLowerCase()}`} className='userAddress' style={{ maxWidth: 'none' }}>{project.creator}</Link>
+          </div>
+        )}
         <p className='description'>{project.description}</p>
         <ul>
           {project.donators.map((d, i) =>
-            <li key={'li' + i}>
+            <li key={`${i}_${d}`}>
               {+window.ethereum.selectedAddress === +d ? (
-                <b>You</b>
+                <span>You</span>
               ) : (
-                <span>{d}</span>
-              )} donated {qavahs[i].amount / 100} cUSD
-              {qavahs[i] && <object data={qavahs[i].image} type="image/svg+xml" />}
+                <Link to={`/${chainId}/user/${d.toLowerCase()}`} className='userAddress'>{d}</Link>
+              )} donated {qavahs[i].amount} cUSD
+              {/* {qavahs[i] && <object data={qavahs[i].image} type="image/svg+xml" />} */}
             </li>
           )}
         </ul>
         <div className="interact">
-          {balance ? (
-            <p className='connect'>{(balance / 100).toFixed(2)} cUSD</p>
+          {store.balance !== null ? (
+            <p className='connect'>{store.balance} cUSD</p>
           ) : (
             <button onClick={() => getBalance(true)} className='connect'>Connect</button>
           )}
@@ -96,6 +92,7 @@ function ProjectInfo () {
             +toClaim ? (
               <button className='claim' onClick={async () => {
                 try {
+                  updateStore({ message: 'Please wait…' })
                   await window.ethereum.request({ method: "eth_requestAccounts" })
                   
                   const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -103,13 +100,13 @@ function ProjectInfo () {
                   const contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
 
                   const tx = await contract.claimProjectFunds(projectId)
-                  updateStore({ message: 'Please wait…' })
                   await tx.wait()
+                  updateStore({ message: '' })
                   getBalance()
                   
                 } catch (error) {
                   console.error(error)
-                  updateStore({ message: error.message })
+                  updateStore({ message: error.data?.message || error.message })
                 }
               }}>
                 Claim {toClaim} cUSD
@@ -117,34 +114,42 @@ function ProjectInfo () {
             ) : (
               <span>Nothing to claim for now</span>
             )
-          ) : (
+          ) : project.fundedAmount.lt(project.requestedAmount) ? (
             <>
-              <span>I wish to help with</span>
-              <input ref={input} type="number" name="amount" placeholder='1.0' />
+              <button className='plain' onClick={() => {
+                input.current.value = Math.max(+input.current.value - requested / 100, requested / 100)
+              }}>-</button>
+              <input ref={input} name="amount" defaultValue={requested / 100} />
+              <button className='plain' onClick={() => {
+                input.current.value = Math.min(+input.current.value + requested / 100, requested)
+              }}>+</button>
               <button className='donate' onClick={async () => {
                 try {
+                  updateStore({ message: 'Please wait…' })
                   await window.ethereum.request({ method: "eth_requestAccounts" })
   
                   const provider = new ethers.providers.Web3Provider(window.ethereum)
                   const signer = provider.getSigner()
                   const contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
-                  const cUSD = getCUSDContract(signer)
-
-                  const value = ethers.utils.parseUnits((input.current.value * 100).toString(), 18)
+                  const cUSD = await getCUSDContract(chainId, signer)
+                  
+                  const value = ethers.utils.parseUnits(input.current.value, 18)
                   await cUSD.approve(getContract(chainId), value)
                   const tx = await contract.donateToProject(projectId, value)
-                  updateStore({ message: 'Please wait…' })
                   await tx.wait()
-                  getBalance()
+                  updateStore({ message: '' })
+                  navigate(`/${chainId}/user/${window.ethereum.selectedAddress}`)
                   
                 } catch (error) {
                   console.error(error)
-                  updateStore({ message: error.message })
+                  updateStore({ message: error.data?.message || error.message })
                 }
               }}>
                 Donate
               </button>
             </>
+          ) : (
+            <span>The campaign is closed</span>
           )}
         </div>
       </div>

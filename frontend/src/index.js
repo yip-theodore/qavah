@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from './App'
 import ProjectInfo from './pages/ProjectInfo'
 import NewProject from './pages/NewProject'
+import Profile from './pages/Profile'
 
 ReactDOM.render(
   <React.StrictMode>
@@ -15,6 +16,7 @@ ReactDOM.render(
           <Route path=":chainId" element={<App />}>
             <Route path="new" element={<NewProject />} />
             <Route path=":projectId" element={<ProjectInfo />} />
+            <Route path="user/:userAddress" element={<Profile />} />
           </Route>
         </Route>
       </Routes>

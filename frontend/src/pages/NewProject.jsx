@@ -61,44 +61,43 @@ function NewProject() {
       try {
         e.preventDefault()
         const { elements } = e.target
+        updateStore({ message: 'Please wait…' })
 
         await window.ethereum.request({ method: "eth_requestAccounts" })
 
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
         const contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
-
         const { path } = await client.add(img.blob)
         const url = `https://ipfs.infura.io/ipfs/${path}`
-        console.log(url)
 
         const tx = await contract.createProject(
           elements['title'].value,
           elements['description'].value,
-          ethers.utils.parseUnits((elements['requestedAmount'].value * 100).toString(), 18),
+          ethers.utils.parseUnits(elements['requestedAmount'].value, 18),
           url,
         )
-        updateStore({ message: 'Please wait…' })
         await tx.wait()
+        updateStore({ message: '' })
         navigate(`/${chainId}`)
 
       } catch (error) {
         console.error(error)
-        updateStore({ message: error.message })
+        updateStore({ message: error.data?.message || error.message })
       }
     }}>
       <div id="container">
         {img && <img className='img' src={img.dataUrl} alt="" />}
       </div>
-      <textarea name='title' placeholder='Your project title' rows='1'></textarea>
-      <textarea name='description' placeholder='Give it some context…' rows='5'></textarea>
+      <textarea name='title' placeholder='Your project title' rows='2'></textarea>
+      <textarea name='description' placeholder='A more detailed description…' rows='6'></textarea>
       <div className='more'>
         <input type='file' name='image' onChange={onFileSelected} />
         <input name='requestedAmount' type='number' step='0.001' placeholder='Amount' />
       </div>
       <div className='action'>
         <Link to={`/${chainId}`}>Back</Link>
-        <button type='submit'>Create project</button>
+        <button type='submit'>Create campaign</button>
       </div>
     </form>
   )

@@ -43,6 +43,11 @@ contract Contract is Initializable {
     event FundsDonated(bytes32 indexed id, address from);
     event FundsClaimed(bytes32 indexed id, address from);
 
+    struct User {
+        bytes32[] projectIds;
+    }
+    mapping(address => User) users;
+
     function createProject(
         string calldata title,
         string calldata description,
@@ -50,8 +55,10 @@ contract Contract is Initializable {
         string calldata image
     ) public {
         require(bytes(title).length > 0, "Project title must not be empty.");
-        require(requestedAmount > 0, "Requested amount be greater than 0.");
-
+        require(
+            requestedAmount / 1e18 >= 10,
+            "Requested amount be at least 10 USD."
+        );
         bytes32 id = keccak256(
             abi.encodePacked(block.timestamp, projectIds.length)
         );
@@ -70,6 +77,8 @@ contract Contract is Initializable {
         projects[id] = project;
         projectIds.push(id);
 
+        users[msg.sender].projectIds.push(id);
+
         emit ProjectCreated(id, msg.sender);
     }
 
@@ -83,6 +92,19 @@ contract Contract is Initializable {
 
     function getProject(bytes32 id) public view returns (Project memory) {
         return projects[id];
+    }
+
+    function getProjectsByUser(address userAddress)
+        public
+        view
+        returns (Project[] memory)
+    {
+        bytes32[] memory projectIdsByUser = users[userAddress].projectIds;
+        Project[] memory _projects = new Project[](projectIdsByUser.length);
+        for (uint256 i = 0; i < projectIdsByUser.length; i++) {
+            _projects[i] = projects[projectIdsByUser[i]];
+        }
+        return _projects;
     }
 
     function getQavahsCount() public view returns (uint256) {
@@ -113,17 +135,31 @@ contract Contract is Initializable {
         );
         uint256 donationPercentage = (100 * amount) / project.requestedAmount;
         require(donationPercentage > 0, "Amount too low.");
+        uint256 fundedPercentage = (project.fundedAmount * 100) /
+            project.requestedAmount;
         uint256 donationAmount = (donationPercentage *
             project.requestedAmount) / 100;
         project.fundedAmount += donationAmount;
         project.donators.push(msg.sender);
 
+        users[msg.sender].projectIds.push(id);
+
         bytes memory svg = abi.encodePacked(
-            '<svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg"><style>image { opacity: 0.2; } image:nth-of-type(-n+',
-            Strings.toString(project.donators.length),
-            ") { opacity: 1; }</style>",
+            '<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"><style>@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700"); * { color: #611f69; } text, p { font-size: 14px; font-family: "Space Grotesk", sans-serif; fill: currentColor; } image { opacity: 0.2; } image:nth-of-type(n+',
+            Strings.toString(fundedPercentage + 1),
+            "):nth-of-type(-n+",
+            Strings.toString(fundedPercentage + donationPercentage),
+            ') { opacity: 1; }</style><rect x="40" y="40" width="320" height="34" fill="#fbcc5c"/><rect x="40" y="254" width="320" height="106" fill="#fbcc5c"/><rect x="39" y="39" width="322" height="322" rx="0" fill="none" stroke="currentColor" stroke-width="2"/><text style="font-weight: bold;" x="50%" y="60" dominant-baseline="middle" text-anchor="middle">qavah #',
+            Strings.toString(getQavahsCount()),
+            "</text>",
             getTilesBytes(project.image, project.id),
-            "</svg>"
+            '<foreignObject x="60" y="270" width="280" height="54"><p style="margin: 0; font-weight: bold;" xmlns="http://www.w3.org/1999/xhtml">',
+            project.title,
+            '</p></foreignObject><text style="font-size: 12px; font-weight: normal;" x="340" y="340" text-anchor="end">+<tspan>',
+            Strings.toString(donationAmount / 1e18),
+            ".",
+            Strings.toString(((donationAmount * 100) / 1e18) % 100),
+            "</tspan> cUSD</text></svg>"
         );
         bytes memory dataURI = abi.encodePacked(
             '{ "name": "Qavah #',
@@ -134,6 +170,8 @@ contract Contract is Initializable {
             Base64.encode(svg),
             '", "amount": ',
             Strings.toString(donationAmount / 1e18),
+            ".",
+            Strings.toString(((donationAmount * 100) / 1e18) % 100),
             ', "timestamp": ',
             Strings.toString(block.timestamp),
             " }"
@@ -166,14 +204,14 @@ contract Contract is Initializable {
         pure
         returns (bytes memory)
     {
-        uint256 root = 2;
+        uint256 root = 10;
         bytes[] memory tiles = new bytes[](root * root);
         for (uint256 y = 0; y < root; y++) {
             for (uint256 x = 0; x < root; x++) {
                 tiles[y * root + x] = abi.encodePacked(
                     '<image href="',
                     src,
-                    '" width="640" height="360" clip-path="inset(',
+                    '" x="40" y="74" width="320" height="180" clip-path="inset(',
                     Strings.toString((y * 100) / root),
                     "% ",
                     Strings.toString(((root - x - 1) * 100) / root),

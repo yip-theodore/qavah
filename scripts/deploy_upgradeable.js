@@ -3,10 +3,9 @@ const fs = require('fs').promises
 
 async function main () {
   const Contract = await ethers.getContractFactory('Contract')
-  const contract = await upgrades.deployProxy(Contract, [
-    '0xc351628EB244ec633d5f21fBD6621e1a683B1181',
-    'http://localhost:3000/1337/'
-  ])
+  const contract = await upgrades.deployProxy(Contract, network.name === 'localhost'
+    ? ['0xc351628EB244ec633d5f21fBD6621e1a683B1181', 'http://localhost:3000/1337/']
+    : ['0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1', 'https://qavah.me/44787/'])
   await contract.deployed()
   console.log('Contract deployed to:', contract.address)
   await saveFrontendFiles(contract)

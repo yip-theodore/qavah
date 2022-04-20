@@ -6,7 +6,7 @@ describe("Contract", function () {
 
   beforeEach(async function () {
     [ creator, addr1, addr2 ] = await ethers.getSigners()
-    p = (amount) => ethers.utils.parseUnits((amount * 100).toString(), 18)
+    p = (amount) => ethers.utils.parseUnits(amount.toString(), 18)
 
     const CUSD = await ethers.getContractFactory('CUSD')
     cUSD = await CUSD.deploy(p(1000))
@@ -23,8 +23,8 @@ describe("Contract", function () {
 
   it("should be good", async function () {
     const tx = await contract.createProject(
-      "A project title",
-      "A project description. It can be a few sentences, or it can be long paragraphs. I'll keep mine real short.",
+      "Delivering school supplies to kids in Central Ghana",
+      "We’re planning on provisionning several areas and villages with books, new clothes and shoes, for all children whose family cannot afford. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas eos soluta repudiandae. Soluta nisi iste maxime rerum porro aperiam explicabo quod cum, ipsam labore praesentium laboriosam aut voluptatum, a quo!",
       p(400),
       "https://ipfs.infura.io/ipfs/QmP64siF2nZZJJJnC5Rcfraxw6zmcaAG1X1S9XfZkNcVqD",
     )
@@ -50,10 +50,17 @@ describe("Contract", function () {
     const tokenURI1 = await qavah(project.qavah).tokenURI(0)
     const token1 = JSON.parse(atob(tokenURI1.split(',')[1]))
     console.log(token1)
-    expect(token1.amount / 100).to.equal(300)
+    expect(token1.amount).to.equal(300)
 
     const owner2 = await qavah(project.qavah).ownerOf(1)
     expect(owner2).to.equal(addr2.address)
+    const projectsByUser = await contract.getProjectsByUser(addr2.address)
+    expect(projectsByUser.length).to.equal(1);
+    const tokenURI2 = await qavah(projectsByUser[0].qavah).tokenURI(1)
+    const token2 = JSON.parse(atob(tokenURI2.split(',')[1]))
+    const image = atob(token2.image.split(',')[1])
+    console.log(image)
+    expect(image).to.contain(`:nth-of-type(n+${76}):nth-of-type(-n+${100})`)
   })
 
 })
