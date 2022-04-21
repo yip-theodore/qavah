@@ -93,7 +93,6 @@ function ProjectInfo () {
               <button className='claim' onClick={async () => {
                 try {
                   updateStore({ message: 'Please wait…' })
-                  await window.ethereum.request({ method: "eth_requestAccounts" })
                   
                   const provider = new ethers.providers.Web3Provider(window.ethereum)
                   const signer = provider.getSigner()
@@ -126,15 +125,16 @@ function ProjectInfo () {
               <button className='donate' onClick={async () => {
                 try {
                   updateStore({ message: 'Please wait…' })
-                  await window.ethereum.request({ method: "eth_requestAccounts" })
+                  await getBalance(true)
   
                   const provider = new ethers.providers.Web3Provider(window.ethereum)
                   const signer = provider.getSigner()
                   const contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
                   const cUSD = await getCUSDContract(chainId, signer)
-                  
+                  if (!input.current) return
                   const value = ethers.utils.parseUnits(input.current.value, 18)
-                  await cUSD.approve(getContract(chainId), value)
+                  const approval = await cUSD.approve(getContract(chainId), value)
+                  await approval.wait()
                   const tx = await contract.donateToProject(projectId, value)
                   await tx.wait()
                   updateStore({ message: '' })

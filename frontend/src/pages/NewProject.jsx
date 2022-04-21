@@ -2,13 +2,14 @@ import React, { useContext, useState } from 'react'
 import { Link, useParams, useNavigate } from "react-router-dom"
 import { ethers } from 'ethers'
 import DitherJS from 'ditherjs'
-import { Context, getContract, getAbi, client } from '../utils'
+import { Context, getContract, getAbi, client, useBalance } from '../utils'
 
 function NewProject() {
   const { chainId } = useParams()
   const navigate = useNavigate()
   const { updateStore } = useContext(Context)
   const [img, setImg] = useState('')
+  const getBalance = useBalance(chainId)
 
   function onFileSelected(event) {
     var selectedFile = event.target.files[0]
@@ -62,8 +63,7 @@ function NewProject() {
         e.preventDefault()
         const { elements } = e.target
         updateStore({ message: 'Please wait…' })
-
-        await window.ethereum.request({ method: "eth_requestAccounts" })
+        getBalance(true)
 
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()

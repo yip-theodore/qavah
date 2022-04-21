@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
@@ -144,46 +143,11 @@ contract Contract is Initializable {
 
         users[msg.sender].projectIds.push(id);
 
-        bytes memory svg = abi.encodePacked(
-            '<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"><style>@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700"); * { color: #611f69; } text, p { font-size: 14px; font-family: "Space Grotesk", sans-serif; fill: currentColor; } image { opacity: 0.2; } image:nth-of-type(n+',
-            Strings.toString(fundedPercentage + 1),
-            "):nth-of-type(-n+",
-            Strings.toString(fundedPercentage + donationPercentage),
-            ') { opacity: 1; }</style><rect x="40" y="40" width="320" height="34" fill="#fbcc5c"/><rect x="40" y="254" width="320" height="106" fill="#fbcc5c"/><rect x="39" y="39" width="322" height="322" rx="0" fill="none" stroke="currentColor" stroke-width="2"/><text style="font-weight: bold;" x="50%" y="60" dominant-baseline="middle" text-anchor="middle">qavah #',
-            Strings.toString(getQavahsCount()),
-            "</text>",
-            getTilesBytes(project.image, project.id),
-            '<foreignObject x="60" y="270" width="280" height="54"><p style="margin: 0; font-weight: bold;" xmlns="http://www.w3.org/1999/xhtml">',
-            project.title,
-            '</p></foreignObject><text style="font-size: 12px; font-weight: normal;" x="340" y="340" text-anchor="end">+<tspan>',
-            Strings.toString(donationAmount / 1e18),
-            ".",
-            Strings.toString(((donationAmount * 100) / 1e18) % 100),
-            "</tspan> cUSD</text></svg>"
-        );
-        bytes memory dataURI = abi.encodePacked(
-            '{ "name": "Qavah #',
-            Strings.toString(getQavahsCount()),
-            '", "description": "',
-            abi.encodePacked(siteUrl, Strings.toHexString(uint256(id))),
-            '", "image": "data:image/svg+xml;base64,',
-            Base64.encode(svg),
-            '", "amount": ',
-            Strings.toString(donationAmount / 1e18),
-            ".",
-            Strings.toString(((donationAmount * 100) / 1e18) % 100),
-            ', "timestamp": ',
-            Strings.toString(block.timestamp),
-            " }"
-        );
-        project.qavah.safeMint(
-            msg.sender,
-            string(
-                abi.encodePacked(
-                    "data:application/json;base64,",
-                    Base64.encode(dataURI)
-                )
-            )
+        mintQavah(
+            project,
+            donationPercentage,
+            donationAmount,
+            fundedPercentage
         );
 
         emit FundsDonated(id, msg.sender);
@@ -199,19 +163,13 @@ contract Contract is Initializable {
         }
     }
 
-    function getTilesBytes(string storage src, bytes32 id)
-        private
-        pure
-        returns (bytes memory)
-    {
+    function getTiles() private pure returns (bytes[] memory) {
         uint256 root = 10;
         bytes[] memory tiles = new bytes[](root * root);
         for (uint256 y = 0; y < root; y++) {
             for (uint256 x = 0; x < root; x++) {
                 tiles[y * root + x] = abi.encodePacked(
-                    '<image href="',
-                    src,
-                    '" x="40" y="74" width="320" height="180" clip-path="inset(',
+                    '<use href="#a" clip-path="inset(',
                     Strings.toString((y * 100) / root),
                     "% ",
                     Strings.toString(((root - x - 1) * 100) / root),
@@ -219,16 +177,148 @@ contract Contract is Initializable {
                     Strings.toString(((root - y - 1) * 100) / root),
                     "% ",
                     Strings.toString((x * 100) / root),
-                    '%)"></image>'
+                    '%)"/>'
                 );
             }
         }
-        shuffleArray(tiles, uint256(id));
+        return tiles;
+    }
+
+    function getTilesBytes(bytes32 projectId)
+        private
+        pure
+        returns (bytes memory)
+    {
+        bytes[] memory tiles = getTiles();
+
+        shuffleArray(tiles, uint256(projectId));
+
+        bytes[] memory tilesChunks = new bytes[](tiles.length / 5);
+        for (uint256 i = 0; i < tiles.length; i += 5) {
+            tilesChunks[i / 5] = abi.encodePacked(
+                tiles[i],
+                tiles[i + 1],
+                tiles[i + 2],
+                tiles[i + 3],
+                tiles[i + 4]
+            );
+        }
         bytes memory tilesBytes;
-        for (uint256 i = 0; i < tiles.length; i++) {
-            tilesBytes = abi.encodePacked(tilesBytes, tiles[i]);
+        for (uint256 i = 0; i < tilesChunks.length / 5; i++) {
+            tilesBytes = abi.encodePacked(
+                tilesBytes,
+                tilesChunks[i * 5],
+                tilesChunks[i * 5 + 1],
+                tilesChunks[i * 5 + 2],
+                tilesChunks[i * 5 + 3],
+                tilesChunks[i * 5 + 4]
+            );
         }
         return tilesBytes;
+    }
+
+    function getSvgStart(
+        string memory projectImage,
+        uint256 donationPercentage,
+        uint256 fundedPercentage
+    ) private view returns (bytes memory) {
+        return
+            abi.encodePacked(
+                '<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"><defs><style>@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700");*{color:#611f69}text,p{font-size:14px;font-family:"Space Grotesk",sans-serif;fill:currentColor}use{opacity: 0.2}use:nth-of-type(n+',
+                Strings.toString(fundedPercentage + 1),
+                "):nth-of-type(-n+",
+                Strings.toString(fundedPercentage + donationPercentage),
+                '){opacity:1}</style><image id="a" href="',
+                projectImage,
+                '" x="40" y="74" width="320" height="180"/></defs><rect x="40" y="40" width="320" height="34" fill="#fbcc5c"/><rect x="40" y="254" width="320" height="106" fill="#fbcc5c"/><rect x="39" y="39" width="322" height="322" rx="0" fill="none" stroke="currentColor" stroke-width="2"/><text style="font-weight:bold" x="50%" y="60" dominant-baseline="middle" text-anchor="middle">qavah #',
+                Strings.toString(getQavahsCount()),
+                "</text>"
+            );
+    }
+
+    function getSvgEnd(string memory projectTitle, uint256 donationAmount)
+        private
+        pure
+        returns (bytes memory)
+    {
+        return
+            abi.encodePacked(
+                '<foreignObject x="60" y="270" width="280" height="54"><p xmlns="http://www.w3.org/1999/xhtml" style="margin:0;font-weight:bold">',
+                projectTitle,
+                '</p></foreignObject><text style="font-size:12px;font-weight: normal" x="340" y="340" text-anchor="end">+',
+                Strings.toString(donationAmount / 1e18),
+                ".",
+                Strings.toString(((donationAmount * 100) / 1e18) % 100),
+                " cUSD</text></svg>"
+            );
+    }
+
+    function getSvg(
+        Project memory project,
+        uint256 donationPercentage,
+        uint256 donationAmount,
+        uint256 fundedPercentage
+    ) private view returns (bytes memory) {
+        return
+            abi.encodePacked(
+                getSvgStart(
+                    project.image,
+                    donationPercentage,
+                    fundedPercentage
+                ),
+                getTilesBytes(project.id),
+                getSvgEnd(project.title, donationAmount)
+            );
+    }
+
+    function getDataURI(
+        bytes memory svg,
+        bytes32 projectId,
+        uint256 donationAmount
+    ) private view returns (bytes memory) {
+        return
+            abi.encodePacked(
+                '{"name":"Qavah #',
+                Strings.toString(getQavahsCount()),
+                '","description":"',
+                abi.encodePacked(
+                    siteUrl,
+                    Strings.toHexString(uint256(projectId))
+                ),
+                '","image":"data:image/svg+xml;base64,',
+                Base64.encode(svg),
+                '","amount":',
+                Strings.toString(donationAmount / 1e18),
+                ".",
+                Strings.toString(((donationAmount * 100) / 1e18) % 100),
+                ',"timestamp":',
+                Strings.toString(block.timestamp),
+                " }"
+            );
+    }
+
+    function mintQavah(
+        Project memory project,
+        uint256 donationPercentage,
+        uint256 donationAmount,
+        uint256 fundedPercentage
+    ) private {
+        bytes memory svg = getSvg(
+            project,
+            donationPercentage,
+            donationAmount,
+            fundedPercentage
+        );
+        bytes memory dataURI = getDataURI(svg, project.id, donationAmount);
+        project.qavah.safeMint(
+            msg.sender,
+            string(
+                abi.encodePacked(
+                    "data:application/json;base64,",
+                    Base64.encode(dataURI)
+                )
+            )
+        );
     }
 
     function claimProjectFunds(bytes32 id) public {

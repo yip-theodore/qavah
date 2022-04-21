@@ -448,9 +448,10 @@ svg {
   visibility: visible;
   position: relative;
   display: block;
-  aspect-ratio: 16 / 9;
+  width: 100%;
 }
 .ProjectInfo .img {
+  width: auto;
   margin: 0 20px;
 }
 object {

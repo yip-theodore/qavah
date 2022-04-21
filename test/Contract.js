@@ -24,13 +24,13 @@ describe("Contract", function () {
   it("should be good", async function () {
     const tx = await contract.createProject(
       "Delivering school supplies to kids in Central Ghana",
-      "We’re planning on provisionning several areas and villages with books, new clothes and shoes, for all children whose family cannot afford. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas eos soluta repudiandae. Soluta nisi iste maxime rerum porro aperiam explicabo quod cum, ipsam labore praesentium laboriosam aut voluptatum, a quo!",
+      "We’re planning on provisioning several areas and villages with books, new clothes and shoes, for all children whose family cannot afford. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas eos soluta repudiandae. Soluta nisi iste maxime rerum porro aperiam explicabo quod cum, ipsam labore praesentium laboriosam aut voluptatum, a quo!",
       p(400),
       "https://ipfs.infura.io/ipfs/QmP64siF2nZZJJJnC5Rcfraxw6zmcaAG1X1S9XfZkNcVqD",
     )
     await tx.wait()
     const projects = await contract.getProjects()
-    console.log(projects)
+    // console.log(projects)
 
     await cUSD.transfer(addr1.address, p(400))
     await cUSD.connect(addr1).approve(contract.address, p(400))
@@ -49,7 +49,7 @@ describe("Contract", function () {
     expect(owner1).to.equal(addr1.address)
     const tokenURI1 = await qavah(project.qavah).tokenURI(0)
     const token1 = JSON.parse(atob(tokenURI1.split(',')[1]))
-    console.log(token1)
+    // console.log(token1)
     expect(token1.amount).to.equal(300)
 
     const owner2 = await qavah(project.qavah).ownerOf(1)
@@ -59,7 +59,7 @@ describe("Contract", function () {
     const tokenURI2 = await qavah(projectsByUser[0].qavah).tokenURI(1)
     const token2 = JSON.parse(atob(tokenURI2.split(',')[1]))
     const image = atob(token2.image.split(',')[1])
-    console.log(image)
+    // console.log(image)
     expect(image).to.contain(`:nth-of-type(n+${76}):nth-of-type(-n+${100})`)
   })
 

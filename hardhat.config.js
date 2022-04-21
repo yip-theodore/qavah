@@ -1,6 +1,7 @@
 require('dotenv').config()
 require("@nomiclabs/hardhat-waffle");
 require('@openzeppelin/hardhat-upgrades');
+require("hardhat-gas-reporter");
 
 module.exports = {
   solidity: {
@@ -8,10 +9,6 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1,
-        details: {
-          yul: false,
-        },
       }
     }
   },

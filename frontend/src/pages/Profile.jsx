@@ -16,7 +16,7 @@ function Profile () {
       try {
         const _projects = await window.contract.getProjectsByUser(userAddress)
         const projects = _projects.filter((p, i, a) => i === a.findIndex(p2 => p2.id === p.id)).reverse()
-        setContributions(await Promise.all(
+        window.contributions = await Promise.all(
           projects.filter(p => +p.creator !== +userAddress)
           .map(p => {
             const qavah = new ethers.Contract(p.qavah, Qavah.abi, window.provider)
@@ -24,7 +24,8 @@ function Profile () {
               qavah.tokenURI(i).then(q => JSON.parse(atob(q.split(',')[1])))
             ).filter(Boolean).reverse()
           }).flat()
-        ))
+        )
+        setContributions(window.contributions)
         setCampaigns(projects.filter(p => +p.creator === +userAddress))
       } catch (error) {
         console.error(error)
@@ -37,12 +38,12 @@ function Profile () {
     <div className='Profile'>
       {/* {!!contributions.length && ( */}
         <div className="contributions">
-          <h2>{+userAddress === +window.ethereum.selectedAddress ? 'My contributions' : 'Public contributions'}</h2>
+          <h2>{+userAddress === +window.ethereum?.selectedAddress ? 'My contributions' : 'Public contributions'}</h2>
           <div className="projects">
             {contributions.map((p, i) => {
               const link = '/' + p.description.split('/').slice(3).join('/')
               return (
-                <Link to={link} className={`Project plain ${+window.ethereum.selectedAddress === +p.creator && 'mine'}`} key={p.name}>
+                <Link to={link} className={`Project plain ${+window.ethereum?.selectedAddress === +p.creator && 'mine'}`} key={p.name}>
                   <object data={p.image} type="image/svg+xml" />
                 </Link>
               )
@@ -52,12 +53,12 @@ function Profile () {
       {/* )}
       {!!campaigns.length && ( */}
         <div className="campaigns">
-          <h2>{+userAddress === +window.ethereum.selectedAddress ? 'My campaigns' : 'Campaigns created'}</h2>
+          <h2>{+userAddress === +window.ethereum?.selectedAddress ? 'My campaigns' : 'Campaigns created'}</h2>
           <div className="projects">
             {campaigns.map((p, i) => {
               const percentage = p.fundedAmount.mul(10*10).div(p.requestedAmount).toNumber()
               return (
-                <Link to={`/${chainId}/${p.id}`} className={`Project plain ${+window.ethereum.selectedAddress === +p.creator && 'mine'}`} key={p.id}>
+                <Link to={`/${chainId}/${p.id}`} className={`Project plain ${+window.ethereum?.selectedAddress === +p.creator && 'mine'}`} key={p.id}>
                   <div className="content">
                     <div className="title">
                       <h3>{p.title}</h3>

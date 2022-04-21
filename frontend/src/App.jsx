@@ -52,9 +52,9 @@ function App () {
         <h2>All campaigns</h2>
         <div className="projects">
           {projects.map((p, i) => {
-            const percentage = p.fundedAmount.mul(100).div(p.requestedAmount).toNumber()
+            const percentage = p.fundedAmount.mul?.(100).div(p.requestedAmount).toNumber()
             return (
-              <Link to={p.id} className={`Project plain ${+window.ethereum.selectedAddress === +p.creator && 'mine'}`} key={p.id}>
+              <Link to={p.id} className={`Project plain ${+window.ethereum?.selectedAddress === +p.creator && 'mine'}`} key={p.id}>
                 <img className='img' src={p.image} alt="" />
                 <div className="content">
                   <div className="title">
