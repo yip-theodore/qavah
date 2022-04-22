@@ -32,6 +32,7 @@ describe("Contract", function () {
     const projects = await contract.getProjects()
     // console.log(projects)
 
+    // await addr1.sendTransaction({ to: '0xD5411f421e2ADA12E731B07E49813018F35DDbD7', value: ethers.utils.parseEther('1') })
     await cUSD.transfer(addr1.address, p(400))
     await cUSD.connect(addr1).approve(contract.address, p(400))
     await expect(contract.connect(addr1).donateToProject(projects[0].id, p(0.10))).to.be.reverted
@@ -58,7 +59,7 @@ describe("Contract", function () {
     expect(projectsByUser.length).to.equal(1);
     const tokenURI2 = await qavah(projectsByUser[0].qavah).tokenURI(1)
     const token2 = JSON.parse(atob(tokenURI2.split(',')[1]))
-    const image = atob(token2.image.split(',')[1])
+    const image = token2.image // atob(token2.image.split(',')[1])
     // console.log(image)
     expect(image).to.contain(`:nth-of-type(n+${76}):nth-of-type(-n+${100})`)
   })

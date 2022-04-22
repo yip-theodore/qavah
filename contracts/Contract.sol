@@ -169,7 +169,7 @@ contract Contract is Initializable {
         for (uint256 y = 0; y < root; y++) {
             for (uint256 x = 0; x < root; x++) {
                 tiles[y * root + x] = abi.encodePacked(
-                    '<use href="#a" clip-path="inset(',
+                    "<use href='%23a' clip-path='inset(",
                     Strings.toString((y * 100) / root),
                     "% ",
                     Strings.toString(((root - x - 1) * 100) / root),
@@ -177,7 +177,7 @@ contract Contract is Initializable {
                     Strings.toString(((root - y - 1) * 100) / root),
                     "% ",
                     Strings.toString((x * 100) / root),
-                    '%)"/>'
+                    "%)'/>"
                 );
             }
         }
@@ -224,13 +224,13 @@ contract Contract is Initializable {
     ) private view returns (bytes memory) {
         return
             abi.encodePacked(
-                '<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"><defs><style>@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700");*{color:#611f69}text,p{font-size:14px;font-family:"Space Grotesk",sans-serif;fill:currentColor}use{opacity: 0.2}use:nth-of-type(n+',
+                "<svg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'><defs><style>@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700');*{color:%23611f69}text,p{font-size:14px;font-family:'Space Grotesk',sans-serif;fill:currentColor}use{opacity: 0.2}use:nth-of-type(n+",
                 Strings.toString(fundedPercentage + 1),
                 "):nth-of-type(-n+",
                 Strings.toString(fundedPercentage + donationPercentage),
-                '){opacity:1}</style><image id="a" href="',
+                "){opacity:1}</style><image id='a' href='",
                 projectImage,
-                '" x="40" y="74" width="320" height="180"/></defs><rect x="40" y="40" width="320" height="34" fill="#fbcc5c"/><rect x="40" y="254" width="320" height="106" fill="#fbcc5c"/><rect x="39" y="39" width="322" height="322" rx="0" fill="none" stroke="currentColor" stroke-width="2"/><text style="font-weight:bold" x="50%" y="60" dominant-baseline="middle" text-anchor="middle">qavah #',
+                "' x='40' y='74' width='320' height='180'/></defs><rect x='40' y='40' width='320' height='34' fill='%23fbcc5c'/><rect x='40' y='254' width='320' height='106' fill='%23fbcc5c'/><rect x='39' y='39' width='322' height='322' rx='0' fill='none' stroke='currentColor' stroke-width='2'/><text style='font-weight:bold' x='50%' y='60' dominant-baseline='middle' text-anchor='middle'>qavah %23",
                 Strings.toString(getQavahsCount()),
                 "</text>"
             );
@@ -243,9 +243,9 @@ contract Contract is Initializable {
     {
         return
             abi.encodePacked(
-                '<foreignObject x="60" y="270" width="280" height="54"><p xmlns="http://www.w3.org/1999/xhtml" style="margin:0;font-weight:bold">',
+                "<foreignObject x='60' y='270' width='280' height='54'><p xmlns='http://www.w3.org/1999/xhtml' style='margin:0;font-weight:bold'>",
                 projectTitle,
-                '</p></foreignObject><text style="font-size:12px;font-weight: normal" x="340" y="340" text-anchor="end">+',
+                "</p></foreignObject><text style='font-size:12px;font-weight: normal' x='340' y='340' text-anchor='end'>+",
                 Strings.toString(donationAmount / 1e18),
                 ".",
                 Strings.toString(((donationAmount * 100) / 1e18) % 100),
@@ -285,15 +285,15 @@ contract Contract is Initializable {
                     siteUrl,
                     Strings.toHexString(uint256(projectId))
                 ),
-                '","image":"data:image/svg+xml;base64,',
-                Base64.encode(svg),
+                '","image":"data:image/svg+xml;utf8,',
+                svg,
                 '","amount":',
                 Strings.toString(donationAmount / 1e18),
                 ".",
                 Strings.toString(((donationAmount * 100) / 1e18) % 100),
                 ',"timestamp":',
                 Strings.toString(block.timestamp),
-                " }"
+                "}"
             );
     }
 

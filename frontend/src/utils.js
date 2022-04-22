@@ -54,14 +54,15 @@ export const getCUSDContract = async (chainId, signer) => {
 
 export const useBalance = (chainId) => {
   const { updateStore } = useContext(Context)
-  const getBalance = async ask => {
+  const getBalance = async (ask, message) => {
+    updateStore({ message })
     if (ask) {
       await window.ethereum.request({ method: "eth_requestAccounts" })
     }
     const cUSD = await getCUSDContract(chainId)
     if (window.ethereum.selectedAddress) {
       const value = await cUSD.balanceOf(window.ethereum.selectedAddress)
-      updateStore({ balance: ethers.utils.formatUnits(value, 18) })
+      updateStore({ message, balance: ethers.utils.formatUnits(value, 18) })
     }
   }
   return getBalance

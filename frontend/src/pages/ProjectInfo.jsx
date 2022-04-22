@@ -25,9 +25,10 @@ function ProjectInfo () {
         const project = await contract.getProject(projectId)
         if (!project.title) return
         window.qavah = new ethers.Contract(project.qavah, Qavah.abi, provider)
-        setQavahs(await Promise.all([...Array(project.donators.length)].map((_, i) => 
+        window.qavahs = await Promise.all([...Array(project.donators.length)].map((_, i) => 
           window.qavah.tokenURI(i).then(q => JSON.parse(atob(q.split(',')[1]))).catch(() => '')
-        )))
+        ))
+        setQavahs(window.qavahs)
         setProject(project)
       } catch (error) {
         console.error(error)
@@ -46,8 +47,8 @@ function ProjectInfo () {
 
   if (!project) return null
 
-  const percentage = project.fundedAmount.mul(100).div(project.requestedAmount).toNumber()
-  const toClaim = ethers.utils.formatUnits(project.fundedAmount.sub(project.claimedAmount), 18)
+  const percentage = project.fundedAmount.mul?.(100).div(project.requestedAmount).toNumber()
+  const toClaim = ethers.utils.formatUnits(project.fundedAmount.sub?.(project.claimedAmount) || 0, 18)
   const requested = ethers.utils.formatUnits(project.requestedAmount, 18)
 
   return (
@@ -64,7 +65,7 @@ function ProjectInfo () {
         <div className="title">
           <h3>{project.title}</h3>
         </div>
-        {+window.ethereum.selectedAddress !== +project.creator && (
+        {+window.ethereum?.selectedAddress !== +project.creator && (
           <div className='creator'>
             <span className='small'>by</span> <Link to={`/${chainId}/user/${project.creator.toLowerCase()}`} className='userAddress' style={{ maxWidth: 'none' }}>{project.creator}</Link>
           </div>
@@ -73,12 +74,11 @@ function ProjectInfo () {
         <ul>
           {project.donators.map((d, i) =>
             <li key={`${i}_${d}`}>
-              {+window.ethereum.selectedAddress === +d ? (
+              {+window.ethereum?.selectedAddress === +d ? (
                 <span>You</span>
               ) : (
                 <Link to={`/${chainId}/user/${d.toLowerCase()}`} className='userAddress'>{d}</Link>
-              )} donated {qavahs[i].amount} cUSD
-              {/* {qavahs[i] && <object data={qavahs[i].image} type="image/svg+xml" />} */}
+              )} donated {qavahs[i]?.amount} cUSD
             </li>
           )}
         </ul>
@@ -88,7 +88,7 @@ function ProjectInfo () {
           ) : (
             <button onClick={() => getBalance(true)} className='connect'>Connect</button>
           )}
-          {+window.ethereum.selectedAddress === +project.creator ? (
+          {+window.ethereum?.selectedAddress === +project.creator ? (
             +toClaim ? (
               <button className='claim' onClick={async () => {
                 try {
@@ -100,8 +100,7 @@ function ProjectInfo () {
 
                   const tx = await contract.claimProjectFunds(projectId)
                   await tx.wait()
-                  updateStore({ message: '' })
-                  getBalance()
+                  await getBalance(true, 'Funds successfully claimed!')
                   
                 } catch (error) {
                   console.error(error)
@@ -113,7 +112,7 @@ function ProjectInfo () {
             ) : (
               <span>Nothing to claim for now</span>
             )
-          ) : project.fundedAmount.lt(project.requestedAmount) ? (
+          ) : project.fundedAmount.lt?.(project.requestedAmount) ? (
             <>
               <button className='plain' onClick={() => {
                 input.current.value = Math.max(+input.current.value - requested / 100, requested / 100)
@@ -124,8 +123,7 @@ function ProjectInfo () {
               }}>+</button>
               <button className='donate' onClick={async () => {
                 try {
-                  updateStore({ message: 'Please wait…' })
-                  await getBalance(true)
+                  await getBalance(true, 'Please wait…')
   
                   const provider = new ethers.providers.Web3Provider(window.ethereum)
                   const signer = provider.getSigner()
@@ -137,7 +135,7 @@ function ProjectInfo () {
                   await approval.wait()
                   const tx = await contract.donateToProject(projectId, value)
                   await tx.wait()
-                  updateStore({ message: '' })
+                  await getBalance(true, 'Donation successfully sent!')
                   navigate(`/${chainId}/user/${window.ethereum.selectedAddress}`)
                   
                 } catch (error) {

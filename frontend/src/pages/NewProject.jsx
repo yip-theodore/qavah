@@ -27,8 +27,7 @@ function NewProject() {
       "algorithm": "atkinson" // one of ["ordered", "diffusion", "atkinson"]
     })
     reader.onload = function (event) {
-      img.src = event.target.result
-      setTimeout(async () => {
+      img.onload = async () => {
         ditherjs.dither(img)
         const canvas = document.querySelector('canvas:last-child')
         const ctx = canvas.getContext('2d')
@@ -52,7 +51,8 @@ function NewProject() {
           dataUrl: canvas1.toDataURL(),
           blob: await new Promise(resolve => canvas1.toBlob(resolve)),
         })
-      })
+      }
+      img.src = event.target.result
     }
     reader.readAsDataURL(selectedFile)
   }
@@ -62,8 +62,7 @@ function NewProject() {
       try {
         e.preventDefault()
         const { elements } = e.target
-        updateStore({ message: 'Please wait…' })
-        getBalance(true)
+        await getBalance(true, 'Please wait…')
 
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
@@ -78,7 +77,7 @@ function NewProject() {
           url,
         )
         await tx.wait()
-        updateStore({ message: '' })
+        updateStore({ message: 'Campaign successfully created!' })
         navigate(`/${chainId}`)
 
       } catch (error) {
@@ -92,8 +91,8 @@ function NewProject() {
       <textarea name='title' placeholder='Your project title' rows='2'></textarea>
       <textarea name='description' placeholder='A more detailed description…' rows='6'></textarea>
       <div className='more'>
-        <input type='file' name='image' onChange={onFileSelected} />
-        <input name='requestedAmount' type='number' step='0.001' placeholder='Amount' />
+        <input type='file' name='image' onChange={onFileSelected} accept='image/*' />
+        <input name='requestedAmount' type='number' step='1' min='10' placeholder='Amount' />
       </div>
       <div className='action'>
         <Link to={`/${chainId}`}>Back</Link>

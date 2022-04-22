@@ -451,7 +451,7 @@ svg {
   width: 100%;
 }
 .ProjectInfo .img {
-  width: auto;
+  width: calc(100% - 40px);
   margin: 0 20px;
 }
 object {

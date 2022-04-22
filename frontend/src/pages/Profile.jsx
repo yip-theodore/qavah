@@ -20,9 +20,23 @@ function Profile () {
           projects.filter(p => +p.creator !== +userAddress)
           .map(p => {
             const qavah = new ethers.Contract(p.qavah, Qavah.abi, window.provider)
-            return p.donators.map((d, i) => +d === +userAddress &&
-              qavah.tokenURI(i).then(q => JSON.parse(atob(q.split(',')[1])))
-            ).filter(Boolean).reverse()
+            return p.donators
+              .map((d, i) => +d === +userAddress &&
+                qavah.tokenURI(i).then(async q => {
+                  const qp = JSON.parse(atob(q.split(',')[1]))
+                  if (window.ReactNativeWebView) {
+                    const blob = await fetch(p.image).then(r => r.blob())
+                    const dataImg = await new Promise((resolve, reject) => {
+                      const reader = new FileReader()
+                      reader.onerror = reject
+                      reader.onload = () => resolve(reader.result)
+                      reader.readAsDataURL(blob)
+                    })
+                    qp['image'] = qp['image'].replace(p.image, dataImg)
+                  }
+                  return qp
+                })
+              ).filter(Boolean).reverse()
           }).flat()
         )
         setContributions(window.contributions)
@@ -41,10 +55,12 @@ function Profile () {
           <h2>{+userAddress === +window.ethereum?.selectedAddress ? 'My contributions' : 'Public contributions'}</h2>
           <div className="projects">
             {contributions.map((p, i) => {
-              const link = '/' + p.description.split('/').slice(3).join('/')
+              const link = '/' + p.description?.split('/').slice(3).join('/')
               return (
                 <Link to={link} className={`Project plain ${+window.ethereum?.selectedAddress === +p.creator && 'mine'}`} key={p.name}>
-                  <object data={p.image} type="image/svg+xml" />
+                  {!window.ReactNativeWebView
+                    ? <object data={p.image} type="image/svg+xml" />
+                    : <img src={p.image} className="img" />}
                 </Link>
               )
             })}
