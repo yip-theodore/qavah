@@ -5,21 +5,32 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./Qavah.sol";
+import "./IERC721.sol";
 
 contract Contract is Initializable {
     address public usdTokenAddress;
     string public siteUrl;
+    address public qavahNFTAddress;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+    // constructor() initializer {}
 
-    function initialize(address tokenAddress, string calldata url)
-        public
-        initializer
-    {
-        usdTokenAddress = tokenAddress;
-        siteUrl = url;
+    // function initialize(address tokenAddress, string calldata url)
+    //     public
+    //     initializer
+    // {
+    //     usdTokenAddress = tokenAddress;
+    //     siteUrl = url;
+    // }
+
+    constructor(
+        address _tokenAddress,
+        string memory _siteUrl,
+        address _qavahNFTAddress
+    ) {
+        usdTokenAddress = _tokenAddress;
+        siteUrl = _siteUrl;
+        qavahNFTAddress = _qavahNFTAddress;
     }
 
     struct Project {
@@ -33,7 +44,6 @@ contract Contract is Initializable {
         uint256 claimedAmount;
         address[] donators;
         uint256 createdAt;
-        Qavah qavah;
     }
     mapping(bytes32 => Project) projects;
     bytes32[] projectIds;
@@ -71,7 +81,6 @@ contract Contract is Initializable {
         project.requestedAmount = requestedAmount;
         project.image = image;
         project.createdAt = block.timestamp;
-        project.qavah = new Qavah();
 
         projects[id] = project;
         projectIds.push(id);
@@ -302,7 +311,7 @@ contract Contract is Initializable {
         uint256 donationPercentage,
         uint256 donationAmount,
         uint256 fundedPercentage
-    ) private {
+    ) public {
         bytes memory svg = getSvg(
             project,
             donationPercentage,
@@ -310,7 +319,7 @@ contract Contract is Initializable {
             fundedPercentage
         );
         bytes memory dataURI = getDataURI(svg, project.id, donationAmount);
-        project.qavah.safeMint(
+        IERC721(qavahNFTAddress).safeMint(
             msg.sender,
             string(
                 abi.encodePacked(

@@ -2,16 +2,17 @@ import React, { useRef, useState, useEffect, useContext } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { ethers } from 'ethers'
 import { Context, getContract, getAbi, Qavah, useBalance, getCUSDContract } from '../utils'
+import qavahAddress from "../contracts/qavah-address.json"
 
-function ProjectInfo () {
+function ProjectInfo() {
   const { chainId, projectId } = useParams()
   const navigate = useNavigate()
   const { store, updateStore } = useContext(Context)
-  
-  const [ project, setProject ] = useState(null)
+
+  const [project, setProject] = useState(null)
   const input = useRef()
 
-  const [ qavahs, setQavahs ] = useState([])
+  const [qavahs, setQavahs] = useState([])
   const getBalance = useBalance(chainId)
 
   useEffect(() => {
@@ -24,8 +25,8 @@ function ProjectInfo () {
       try {
         const project = await contract.getProject(projectId)
         if (!project.title) return
-        window.qavah = new ethers.Contract(project.qavah, Qavah.abi, provider)
-        setQavahs(await Promise.all([...Array(project.donators.length)].map((_, i) => 
+        window.qavah = new ethers.Contract(qavahAddress.Address, Qavah.abi, provider)
+        setQavahs(await Promise.all([...Array(project.donators.length)].map((_, i) =>
           window.qavah.tokenURI(i).then(q => JSON.parse(atob(q.split(',')[1]))).catch(() => '')
         )))
         setProject(project)
@@ -93,7 +94,7 @@ function ProjectInfo () {
               <button className='claim' onClick={async () => {
                 try {
                   updateStore({ message: 'Please wait…' })
-                  
+
                   const provider = new ethers.providers.Web3Provider(window.ethereum)
                   const signer = provider.getSigner()
                   const contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
@@ -102,7 +103,7 @@ function ProjectInfo () {
                   await tx.wait()
                   updateStore({ message: '' })
                   getBalance()
-                  
+
                 } catch (error) {
                   console.error(error)
                   updateStore({ message: error.data?.message || error.message })
@@ -126,7 +127,6 @@ function ProjectInfo () {
                 try {
                   updateStore({ message: 'Please wait…' })
                   await getBalance(true)
-  
                   const provider = new ethers.providers.Web3Provider(window.ethereum)
                   const signer = provider.getSigner()
                   const contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
@@ -135,11 +135,14 @@ function ProjectInfo () {
                   const value = ethers.utils.parseUnits(input.current.value, 18)
                   const approval = await cUSD.approve(getContract(chainId), value)
                   await approval.wait()
+
                   const tx = await contract.donateToProject(projectId, value)
+                  console.log("Project id: ", projectId)
                   await tx.wait()
+                  alert(`You can confirm your nft at: https://alfajores-blockscout.celo-testnet.org/token/${qavahAddress}/token-transfers`)
                   updateStore({ message: '' })
                   navigate(`/${chainId}/user/${window.ethereum.selectedAddress}`)
-                  
+
                 } catch (error) {
                   console.error(error)
                   updateStore({ message: error.data?.message || error.message })
