@@ -47,6 +47,9 @@ contract Contract is Initializable {
     }
     mapping(address => User) users;
 
+    /**
+    Create a crowd funding project
+     */
     function createProject(
         string calldata title,
         string calldata description,
@@ -81,6 +84,9 @@ contract Contract is Initializable {
         emit ProjectCreated(id, msg.sender);
     }
 
+    /**
+    Get the list of all crowdfunding projects
+     */
     function getProjects() public view returns (Project[] memory) {
         Project[] memory _projects = new Project[](projectIds.length);
         for (uint256 i = 0; i < projectIds.length; i++) {
@@ -89,10 +95,17 @@ contract Contract is Initializable {
         return _projects;
     }
 
+    /**
+    Get the details of a specific crowdfunding project by id
+    */
     function getProject(bytes32 id) public view returns (Project memory) {
         return projects[id];
     }
 
+    /**
+    Get the list of crowdfunding projects created or donated to by a
+    particular user identified by user address
+    */
     function getProjectsByUser(address userAddress)
         public
         view
@@ -106,6 +119,9 @@ contract Contract is Initializable {
         return _projects;
     }
 
+    /**
+    Get count of total Qavah token issued across all crowdfunding projects
+     */
     function getQavahsCount() public view returns (uint256) {
         uint256 count = 0;
         for (uint256 i = 0; i < projectIds.length; i++) {
@@ -114,6 +130,9 @@ contract Contract is Initializable {
         return count;
     }
 
+    /**
+    Receive donation for a crowdfunding project
+     */
     function donateToProject(bytes32 id, uint256 amount) public {
         Project storage project = projects[id];
         require(
@@ -132,10 +151,12 @@ contract Contract is Initializable {
             ),
             "Transfer failed."
         );
+
         uint256 donationPercentage = (100 * amount) / project.requestedAmount;
         require(donationPercentage > 0, "Amount too low.");
         uint256 fundedPercentage = (project.fundedAmount * 100) /
             project.requestedAmount;
+
         uint256 donationAmount = (donationPercentage *
             project.requestedAmount) / 100;
         project.fundedAmount += donationAmount;
@@ -223,6 +244,8 @@ contract Contract is Initializable {
         uint256 fundedPercentage
     ) private view returns (bytes memory) {
         return
+            // encode density of blocking squares on project image
+            // ie higher donation = lower frequency
             abi.encodePacked(
                 "<svg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'><defs><style>@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700');*{color:%23611f69}text,p{font-size:14px;font-family:'Space Grotesk',sans-serif;fill:currentColor}use{opacity: 0.2}use:nth-of-type(n+",
                 Strings.toString(fundedPercentage + 1),
@@ -253,6 +276,9 @@ contract Contract is Initializable {
             );
     }
 
+    /**
+    Generate SVG for new Qavah token
+    */
     function getSvg(
         Project memory project,
         uint256 donationPercentage,
@@ -271,6 +297,10 @@ contract Contract is Initializable {
             );
     }
 
+    /**
+    Generate base64-encoded data URI for a newly minted
+    Qavah token
+     */
     function getDataURI(
         bytes memory svg,
         bytes32 projectId,
@@ -321,6 +351,9 @@ contract Contract is Initializable {
         );
     }
 
+    /**
+    Claim total residual amount donated to a crowdfunding project 
+    */
     function claimProjectFunds(bytes32 id) public {
         Project storage project = projects[id];
         require(
