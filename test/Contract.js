@@ -25,6 +25,48 @@ describe("Contract", function () {
       new ethers.Contract(address, qavahArtifact.abi, creator);
   });
 
+  /**
+   * Test helpers start
+   */
+  const getProjectId = async (projectIndex) => {
+    const projects = await contract.getProjects();
+    return projects[projectIndex].id;
+  };
+
+  const getTokenData = async (qavahInstance, tokenId) => {
+    const tokenURI = await qavah(qavahInstance).tokenURI(tokenId);
+    return JSON.parse(atob(tokenURI.split(",")[1]));
+  };
+
+  const createCrowdFundingProject = async (
+    owner,
+    title = "default title",
+    amount = p(100)
+  ) => {
+    const trx = await contract
+      .connect(owner)
+      .createProject(
+        title,
+        "We’re planning on provisioning several areas and villages with books, new clothes and shoes, for all children whose family cannot afford. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas eos soluta repudiandae. Soluta nisi iste maxime rerum porro aperiam explicabo quod cum, ipsam labore praesentium laboriosam aut voluptatum, a quo!",
+        amount,
+        "https://ipfs.infura.io/ipfs/QmP64siF2nZZJJJnC5Rcfraxw6zmcaAG1X1S9XfZkNcVqD"
+      );
+    await trx.wait();
+  };
+
+  const donateToCrowdFundingProject = async (projectId, donator, amount) => {
+    // setup ERC20 contract to allow contract transfer donation
+    // amount from sender
+    await cUSD.transfer(donator.address, amount);
+    await cUSD.connect(donator).approve(contract.address, amount);
+
+    return contract.connect(donator).donateToProject(projectId, amount);
+  };
+
+  /**
+   * Test helpers end
+   */
+
   describe("createProject", () => {
     it("should create and fetch a new crowdfunding project", async () => {
       const projectTitle =
@@ -58,12 +100,15 @@ describe("Contract", function () {
   });
 
   describe("donateToProject", () => {
-    it("should mint a Qavah token to donator and emit donation event on successful project donation", async () => {
+    it("should mint a Qavah token to donator and emit donation event on successful donation", async () => {
       await createCrowdFundingProject(creator, "dummy title", p(100));
+
+      const dollarAmount = 10;
+      const donationAmount = p(dollarAmount);
 
       const projects = await contract.getProjects();
       const projectId = projects[0].id;
-      const donationAmount = p(10);
+      const qavahInstance = projects[0].qavah;
 
       expect(
         await donateToCrowdFundingProject(projectId, addr1, donationAmount)
@@ -71,8 +116,46 @@ describe("Contract", function () {
         .to.emit(contract, "FundsDonated")
         .withArgs(projectId, addr1.address);
 
-      const owner1 = await qavah(projects[0].qavah).ownerOf(0);
+      const tokenId = 0;
+
+      const owner1 = await qavah(qavahInstance).ownerOf(0);
       expect(owner1).to.equal(addr1.address);
+      const tokenData = await getTokenData(qavahInstance, tokenId);
+      expect(tokenData.amount).to.equal(dollarAmount);
+    });
+
+    it("should increase funded amount on successful donation", async () => {
+      await createCrowdFundingProject(creator, "dummy title", p(100));
+
+      const projectId = getProjectId(0);
+      let project = await contract.getProject(projectId);
+      expect(project.fundedAmount).to.equal(p(0));
+
+      const donationAmount = p(50);
+      await donateToCrowdFundingProject(projectId, addr1, donationAmount);
+
+      project = await contract.getProject(projectId);
+      expect(project.fundedAmount).to.equal(donationAmount);
+    });
+
+    it("should fail to donate to own project", async () => {
+      await createCrowdFundingProject(creator, "dummy title", p(100));
+
+      const projectId = await getProjectId(0);
+
+      await expect(
+        donateToCrowdFundingProject(projectId, creator, p(10))
+      ).to.be.revertedWith("You cannot donate to yourself.");
+    });
+
+    it("should fail to donate less than 1% of requested amount", async () => {
+      await createCrowdFundingProject(creator, "dummy title", p(100));
+
+      const projectId = await getProjectId(0);
+
+      await expect(
+        donateToCrowdFundingProject(projectId, addr1, p(0.9))
+      ).to.be.revertedWith("Amount too low.");
     });
   });
 
@@ -154,84 +237,5 @@ describe("Contract", function () {
         )})`
       );
     });
-
-    // - Contract
-    //   - createProject
-    //   - getProjects
-    //   - getProject
-    //   - getProjectsByUser
-    //   - donateToProject
-    //   - getQavahsCount
-    //   - claimProjectFunds
-    //   - mintQavah
-
-    const createCrowdFundingProject = async (
-      owner,
-      title = "default title",
-      amount = p(100)
-    ) => {
-      const trx = await contract
-        .connect(owner)
-        .createProject(
-          title,
-          "We’re planning on provisioning several areas and villages with books, new clothes and shoes, for all children whose family cannot afford. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas eos soluta repudiandae. Soluta nisi iste maxime rerum porro aperiam explicabo quod cum, ipsam labore praesentium laboriosam aut voluptatum, a quo!",
-          amount,
-          "https://ipfs.infura.io/ipfs/QmP64siF2nZZJJJnC5Rcfraxw6zmcaAG1X1S9XfZkNcVqD"
-        );
-      await trx.wait();
-    };
-
-    const donateToCrowdFundingProject = async (projectId, donator, amount) => {
-      // setup ERC20 contract to allow contract transfer donation
-      // amount from sender
-      await cUSD.transfer(donator.address, amount);
-      await cUSD.connect(donator).approve(contract.address, amount);
-
-      return contract.connect(donator).donateToProject(projectId, amount);
-    };
   });
-
-  // it("should be good", async function () {
-  //   const tx = await contract.createProject(
-  //     "Delivering school supplies to kids in Central Ghana",
-  //     "We’re planning on provisioning several areas and villages with books, new clothes and shoes, for all children whose family cannot afford. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas eos soluta repudiandae. Soluta nisi iste maxime rerum porro aperiam explicabo quod cum, ipsam labore praesentium laboriosam aut voluptatum, a quo!",
-  //     p(400),
-  //     "https://ipfs.infura.io/ipfs/QmP64siF2nZZJJJnC5Rcfraxw6zmcaAG1X1S9XfZkNcVqD"
-  //   );
-  //   await tx.wait();
-  //   const projects = await contract.getProjects();
-
-  //   await cUSD.transfer(addr1.address, p(400));
-  //   await cUSD.connect(addr1).approve(contract.address, p(400));
-  //   await expect(
-  //     contract.connect(addr1).donateToProject(projects[0].id, p(0.1))
-  //   ).to.be.reverted;
-  //   await contract.connect(addr1).donateToProject(projects[0].id, p(300.9));
-
-  //   await cUSD.transfer(addr2.address, p(200));
-  //   await cUSD.connect(addr2).approve(contract.address, p(200));
-  //   await contract.connect(addr2).donateToProject(projects[0].id, p(100));
-  //   await expect(contract.connect(addr2).donateToProject(projects[0].id, p(50)))
-  //     .to.be.reverted;
-
-  //   const project = await contract.getProject(projects[0].id);
-  //   expect(project.fundedAmount).to.equal(p(400));
-
-  //   const owner1 = await qavah(project.qavah).ownerOf(0);
-  //   expect(owner1).to.equal(addr1.address);
-  //   const tokenURI1 = await qavah(project.qavah).tokenURI(0);
-  //   const token1 = JSON.parse(atob(tokenURI1.split(",")[1]));
-  //   // console.log(token1)
-  //   expect(token1.amount).to.equal(300);
-
-  //   const owner2 = await qavah(project.qavah).ownerOf(1);
-  //   expect(owner2).to.equal(addr2.address);
-  //   const projectsByUser = await contract.getProjectsByUser(addr2.address);
-  //   expect(projectsByUser.length).to.equal(1);
-  //   const tokenURI2 = await qavah(projectsByUser[0].qavah).tokenURI(1);
-  //   const token2 = JSON.parse(atob(tokenURI2.split(",")[1]));
-  //   const image = token2.image; // atob(token2.image.split(',')[1])
-  //   // console.log(image)
-  //   expect(image).to.contain(`:nth-of-type(n+${76}):nth-of-type(-n+${100})`);
-  // });
 });
