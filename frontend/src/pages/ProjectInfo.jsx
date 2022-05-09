@@ -1,59 +1,34 @@
-import React, { useRef, useState, useEffect, useContext } from 'react'
+import React, { useRef, useEffect, useContext } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { BigNumber, ethers } from 'ethers'
-import { Context, getContract, getAbi, Qavah, useBalance, getCUSDContract } from '../utils'
+import { Context, getContract, getAbi, useBalance, getCUSDContract } from '../utils'
 import { PROJECT_INFO } from '../graphql'
 
-function ProjectInfo () {
+function ProjectInfo() {
   const { chainId, projectId } = useParams()
   const navigate = useNavigate()
   const { store, updateStore } = useContext(Context)
-  
-  const [ _project, setProject ] = useState(null)
-  const { loading, error, data: { project } = {} } = useQuery(PROJECT_INFO, { variables: { projectId } })
-  const input = useRef()
 
-  const [ qavahs, setQavahs ] = useState([])
+  const { data: { project } = {} } = useQuery(PROJECT_INFO, {
+    variables: { projectId },
+    pollInterval: 1000,
+  })
+  const input = useRef()
   const getBalance = useBalance(chainId)
 
   useEffect(() => {
-    // if (window.ethereum === undefined) {
-    //   return updateStore({ message: 'Please make sure you have MetaMask! Then reload the page.' })
-    // }
-    // const provider = new ethers.providers.Web3Provider(window.ethereum)
-    // const contract = new ethers.Contract(getContract(chainId), getAbi(), provider)
-    // const getProject = async () => {
-    //   try {
-    //     const project = await contract.getProject(projectId)
-    //     if (!project.title) return
-    //     window.qavah = new ethers.Contract(project.qavah, Qavah.abi, provider)
-    //     window.qavahs = await Promise.all([...Array(project.donators.length)].map((_, i) => 
-    //       window.qavah.tokenURI(i).then(q => JSON.parse(atob(q.split(',')[1]))).catch(() => '')
-    //     ))
-    //     setQavahs(window.qavahs)
-    //     setProject(project)
-    //   } catch (error) {
-    //     console.error(error)
-    //     updateStore({ message: error.data?.message || error.message, disabled: true })
-    //   }
-    // }
-    // getProject()
-    // contract.on(contract.filters.FundsDonated(projectId), getProject)
-    // contract.on(contract.filters.FundsClaimed(projectId), getProject)
-    // // getBalance()
-    // return () => {
-    //   contract.off(contract.filters.FundsDonated(projectId), getProject)
-    //   contract.off(contract.filters.FundsClaimed(projectId), getProject)
-    // }
+    if (window.ethereum) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+      window.contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
+    }
   }, [])
-
   if (!project) return null
 
   const percentage = BigNumber.from(project.fundedAmount).mul?.(100).div(project.requestedAmount).toNumber()
   const toClaim = ethers.utils.formatUnits(BigNumber.from(project.fundedAmount).sub?.(project.claimedAmount) || 0, 18)
   const requested = ethers.utils.formatUnits(project.requestedAmount, 18)
-
   return (
     <div className='ProjectInfo'>
       <div className='bar'>
@@ -75,13 +50,13 @@ function ProjectInfo () {
         )}
         <p className='description'>{project.description}</p>
         <ul>
-          {project.donators.map((d, i) =>
-            <li key={`${i}_${d.id}`}>
-              {+window.ethereum?.selectedAddress === +d.id ? (
+          {project.collection.receipts.map((r, i) =>
+            <li key={`${i}_${r.id}`}>
+              {+window.ethereum?.selectedAddress === +r.donator.id ? (
                 <span>You</span>
               ) : (
-                <Link to={`/${chainId}/user/${d.id.toLowerCase()}`} className='userAddress'>{d.id}</Link>
-              )} donated {project.collection.receipts[i].amount} cUSD
+                <Link to={`/${chainId}/user/${r.donator.id.toLowerCase()}`} className='userAddress'>{r.donator.id}</Link>
+              )} donated {r.amount} cUSD
             </li>
           )}
         </ul>
@@ -96,7 +71,7 @@ function ProjectInfo () {
               <button className='claim' onClick={async () => {
                 try {
                   updateStore({ message: 'Please wait…' })
-                  
+
                   const provider = new ethers.providers.Web3Provider(window.ethereum)
                   const signer = provider.getSigner()
                   const contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
@@ -104,7 +79,7 @@ function ProjectInfo () {
                   const tx = await contract.claimProjectFunds(projectId)
                   await tx.wait()
                   await getBalance(true, 'Funds successfully claimed!')
-                  
+
                 } catch (error) {
                   console.error(error)
                   updateStore({ message: error.data?.message || error.message })
@@ -127,7 +102,7 @@ function ProjectInfo () {
               <button className='donate' onClick={async () => {
                 try {
                   await getBalance(true, 'Please wait…')
-  
+
                   const provider = new ethers.providers.Web3Provider(window.ethereum)
                   const signer = provider.getSigner()
                   const contract = new ethers.Contract(getContract(chainId), getAbi(), signer)
@@ -140,7 +115,7 @@ function ProjectInfo () {
                   await tx.wait()
                   await getBalance(true, 'Donation successfully sent!')
                   navigate(`/${chainId}/user/${window.ethereum.selectedAddress}`)
-                  
+
                 } catch (error) {
                   console.error(error)
                   updateStore({ message: error.data?.message || error.message })
@@ -150,7 +125,7 @@ function ProjectInfo () {
               </button>
             </>
           ) : (
-            <span>The campaign is closed</span>
+            <span>The campaign has finished!</span>
           )}
         </div>
       </div>

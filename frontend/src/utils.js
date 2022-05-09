@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useCallback, useContext } from 'react'
+import { createContext, useContext } from 'react'
 import contractAddresses from './contracts/contract-address.json'
 import Contract from './contracts/Contract.json'
 import { create as ipfsHttpClient } from "ipfs-http-client"
@@ -25,25 +25,6 @@ export const getNetwork = chainId => ({
 
 export const client = ipfsHttpClient("https://ipfs.infura.io:5001/api/v0")
 export const Qavah = _Qavah
-
-// export const useContract = (abi, contractAddress) => {
-//   const { getConnectedKit, address } = useContractKit();
-//   const [contract, setContract] = useState(null);
-
-//   const getContract = useCallback(async () => {
-//     const kit = await getConnectedKit();
-//     setContract(new kit.web3.eth.Contract(abi, contractAddress));
-//   }, [getConnectedKit, abi, contractAddress]);
-
-//   useEffect(() => {
-//     if (address) getContract();
-//   }, [address, getContract]);
-
-//   return contract;
-// };
-
-// export const useMainContract = (chainId) =>
-//   useContract(Contract.abi, contractAddresses[chainId]);
 
 export const getCUSDContract = async (chainId, signer) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum)

@@ -3,11 +3,20 @@ import { ApolloClient, InMemoryCache, gql } from '@apollo/client'
 export const client = new ApolloClient({
   uri: 'https://api.thegraph.com/subgraphs/name/yip-theodore/qavah',
   cache: new InMemoryCache(),
+  defaultOptions: {
+    query: {
+      fetchPolicy: 'network-only',
+    },
+  },
 })
 
 export const ALL_PROJECTS = gql`
   query {
-    projects(orderBy: createdAt, orderDirection: desc) {
+    projects(
+      orderBy: createdAt
+      orderDirection: desc
+      where: { hidden: false }
+    ) {
       id
       creator {
         id
@@ -77,6 +86,10 @@ export const PROFILE = gql`
       id
       description
       image
+      project {
+        id
+        image
+      }
     }
   }
 `

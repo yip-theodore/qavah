@@ -17,6 +17,7 @@ dataSources:
         - ProjectCreated
         - FundsDonated
         - FundsClaimed
+        - ProjectVisibilitySet
       abis:
         - name: Contract
           file: ./abis/Contract.json
@@ -29,4 +30,6 @@ dataSources:
           handler: handleFundsDonated
         - event: FundsClaimed(indexed bytes32,address)
           handler: handleFundsClaimed
+        - event: ProjectVisibilitySet(indexed bytes32,bool)
+          handler: handleProjectVisibilitySet
       file: ./src/mapping.ts

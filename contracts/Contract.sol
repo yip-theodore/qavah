@@ -34,6 +34,7 @@ contract Contract is Initializable {
         address[] donators;
         uint256 createdAt;
         Qavah qavah;
+        bool hidden;
     }
     mapping(bytes32 => Project) projects;
     bytes32[] projectIds;
@@ -41,6 +42,7 @@ contract Contract is Initializable {
     event ProjectCreated(bytes32 id, address indexed from);
     event FundsDonated(bytes32 indexed id, address from);
     event FundsClaimed(bytes32 indexed id, address from);
+    event ProjectVisibilitySet(bytes32 indexed id, bool hidden);
 
     struct User {
         bytes32[] projectIds;
@@ -337,5 +339,19 @@ contract Contract is Initializable {
         project.claimedAmount += transferAmount;
 
         emit FundsClaimed(id, msg.sender);
+    }
+
+    function toggleProjectVisibility(bytes32 id) public onlyAdmin {
+        Project storage project = projects[id];
+        project.hidden = !project.hidden;
+        emit ProjectVisibilitySet(id, project.hidden);
+    }
+
+    modifier onlyAdmin() {
+        require(
+            msg.sender == 0xB24D63186f3392e86D68e36dA6d24cf5D3D8885a,
+            "Caller is not admin."
+        );
+        _;
     }
 }

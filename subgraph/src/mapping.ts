@@ -5,6 +5,7 @@ import {
   ProjectCreated,
   FundsDonated,
   FundsClaimed,
+  ProjectVisibilitySet,
 } from "../generated/Contract/Contract"
 import { Qavah } from "../generated/Contract/Qavah"
 import { User, Project, Collection, Receipt } from "../generated/schema"
@@ -29,6 +30,7 @@ export function handleProjectCreated(event: ProjectCreated): void {
   let collection = new Collection(_project.qavah)
   collection.save()
   project.collection = collection.id
+  project.hidden = _project.hidden
   project.save()
 }
 
@@ -63,5 +65,11 @@ export function handleFundsClaimed(event: FundsClaimed): void {
   let project = Project.load(event.params.id) as Project
   const _project = Contract.bind(event.address).getProject(event.params.id)
   project.claimedAmount = _project.claimedAmount
+  project.save()
+}
+
+export function handleProjectVisibilitySet(event: ProjectVisibilitySet): void {
+  let project = Project.load(event.params.id) as Project
+  project.hidden = event.params.hidden
   project.save()
 }
