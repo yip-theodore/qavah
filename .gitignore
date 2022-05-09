@@ -7,3 +7,7 @@ artifacts
 
 .env
 .openzeppelin
+
+.DS_Store
+build
+generated

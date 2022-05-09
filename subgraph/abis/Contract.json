@@ -1,0 +1,264 @@
+[
+  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      }
+    ],
+    "name": "FundsClaimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      }
+    ],
+    "name": "FundsDonated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      }
+    ],
+    "name": "ProjectCreated",
+    "type": "event"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "id", "type": "bytes32" }],
+    "name": "claimProjectFunds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "title", "type": "string" },
+      { "internalType": "string", "name": "description", "type": "string" },
+      {
+        "internalType": "uint256",
+        "name": "requestedAmount",
+        "type": "uint256"
+      },
+      { "internalType": "string", "name": "image", "type": "string" }
+    ],
+    "name": "createProject",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "id", "type": "bytes32" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "donateToProject",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "id", "type": "bytes32" }],
+    "name": "getProject",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "bytes32", "name": "id", "type": "bytes32" },
+          { "internalType": "address", "name": "creator", "type": "address" },
+          { "internalType": "string", "name": "title", "type": "string" },
+          {
+            "internalType": "uint256",
+            "name": "requestedAmount",
+            "type": "uint256"
+          },
+          { "internalType": "string", "name": "description", "type": "string" },
+          { "internalType": "string", "name": "image", "type": "string" },
+          {
+            "internalType": "uint256",
+            "name": "fundedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "claimedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "donators",
+            "type": "address[]"
+          },
+          { "internalType": "uint256", "name": "createdAt", "type": "uint256" },
+          {
+            "internalType": "contract Qavah",
+            "name": "qavah",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct Contract.Project",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getProjects",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "bytes32", "name": "id", "type": "bytes32" },
+          { "internalType": "address", "name": "creator", "type": "address" },
+          { "internalType": "string", "name": "title", "type": "string" },
+          {
+            "internalType": "uint256",
+            "name": "requestedAmount",
+            "type": "uint256"
+          },
+          { "internalType": "string", "name": "description", "type": "string" },
+          { "internalType": "string", "name": "image", "type": "string" },
+          {
+            "internalType": "uint256",
+            "name": "fundedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "claimedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "donators",
+            "type": "address[]"
+          },
+          { "internalType": "uint256", "name": "createdAt", "type": "uint256" },
+          {
+            "internalType": "contract Qavah",
+            "name": "qavah",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct Contract.Project[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "userAddress", "type": "address" }
+    ],
+    "name": "getProjectsByUser",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "bytes32", "name": "id", "type": "bytes32" },
+          { "internalType": "address", "name": "creator", "type": "address" },
+          { "internalType": "string", "name": "title", "type": "string" },
+          {
+            "internalType": "uint256",
+            "name": "requestedAmount",
+            "type": "uint256"
+          },
+          { "internalType": "string", "name": "description", "type": "string" },
+          { "internalType": "string", "name": "image", "type": "string" },
+          {
+            "internalType": "uint256",
+            "name": "fundedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "claimedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "donators",
+            "type": "address[]"
+          },
+          { "internalType": "uint256", "name": "createdAt", "type": "uint256" },
+          {
+            "internalType": "contract Qavah",
+            "name": "qavah",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct Contract.Project[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getQavahsCount",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "tokenAddress", "type": "address" },
+      { "internalType": "string", "name": "url", "type": "string" }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "siteUrl",
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "usdTokenAddress",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
