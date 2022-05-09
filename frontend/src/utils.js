@@ -20,7 +20,7 @@ export const getNetwork = chainId => ({
   4: 'Rinkeby Test Network',
   97: 'BSC Testnet',
   1337: 'localhost',
-  44787: 'Celo Alfajores Testnet',
+  44787: 'CELO Alfajores',
 })[chainId]
 
 export const client = ipfsHttpClient("https://ipfs.infura.io:5001/api/v0")
@@ -57,6 +57,12 @@ export const useBalance = (chainId) => {
   const getBalance = async (ask, message) => {
     updateStore({ message })
     if (ask) {
+      if (window.ethereum === undefined) {
+        return updateStore({ message: 'Please make sure you have MetaMask! Then reload the page.' })
+      }
+      if (window.ethereum.chainId && +window.ethereum.chainId !== +chainId) {
+        return updateStore({ message: `Make sure you’re on ${getNetwork(chainId)}! Then reload the page.` })
+      }
       await window.ethereum.request({ method: "eth_requestAccounts" })
     }
     const cUSD = await getCUSDContract(chainId)

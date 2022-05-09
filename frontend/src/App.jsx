@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, Link, useParams, useNavigate } from "react-router-dom"
-import { ethers } from 'ethers'
+import { useQuery } from '@apollo/client'
+import { ethers, BigNumber } from 'ethers'
 import { Context, getContract, getAbi, getNetwork } from './utils'
 import Header from './components/Header'
 import './index.css'
+import { ALL_PROJECTS } from './graphql'
 
 function App () {
   const { chainId } = useParams()
@@ -12,7 +14,8 @@ function App () {
     balance: null,
   })
 
-  const [ projects, setProjects ] = useState([])
+  const [ _projects, setProjects ] = useState([])
+  const { loading, error, data: { projects = [] } = {} } = useQuery(ALL_PROJECTS)
 
   const updateStore = update => setStore({ ...store, ...update })
 
@@ -29,20 +32,20 @@ function App () {
   }
 
   useEffect(() => {
-    if (window.ethereum === undefined) {
-      return updateStore({ message: 'Please make sure you have MetaMask! Then reload the page.', disabled: true })
-    }
-    window.provider = new ethers.providers.Web3Provider(window.ethereum)
-    window.contract = new ethers.Contract(getContract(chainId), getAbi(), window.provider)
-    getProjects()
-    window.contract.on('ProjectCreated', getProjects)
-    window.contract.on('FundsDonated', getProjects)
-    window.contract.on('FundsClaimed', getProjects)
-    return () => {
-      window.contract.off('ProjectCreated', getProjects)
-      window.contract.off('FundsDonated', getProjects)
-      window.contract.off('FundsClaimed', getProjects)
-    }
+    // if (window.ethereum === undefined) {
+    //   return updateStore({ message: 'Please make sure you have MetaMask! Then reload the page.', disabled: true })
+    // }
+    // window.provider = new ethers.providers.Web3Provider(window.ethereum)
+    // window.contract = new ethers.Contract(getContract(chainId), getAbi(), window.provider)
+    // getProjects()
+    // window.contract.on('ProjectCreated', getProjects)
+    // window.contract.on('FundsDonated', getProjects)
+    // window.contract.on('FundsClaimed', getProjects)
+    // return () => {
+    //   window.contract.off('ProjectCreated', getProjects)
+    //   window.contract.off('FundsDonated', getProjects)
+    //   window.contract.off('FundsClaimed', getProjects)
+    // }
   }, [])
 
   return (
@@ -52,7 +55,7 @@ function App () {
         <h2>All campaigns</h2>
         <div className="projects">
           {projects.map((p, i) => {
-            const percentage = p.fundedAmount.mul?.(100).div(p.requestedAmount).toNumber()
+            const percentage = BigNumber.from(p.fundedAmount).mul?.(100).div(p.requestedAmount).toNumber()
             return (
               <Link to={p.id} className={`Project plain ${+window.ethereum?.selectedAddress === +p.creator && 'mine'}`} key={p.id}>
                 <img className='img' src={p.image} alt="" />
